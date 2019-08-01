@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yjh.mapper.MajorMapper" >
+  <resultMap id="BaseResultMap" type="com.yjh.domain.Major" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="sdept_id" property="sdeptId" jdbcType="INTEGER" />
+    <result column="leader_id" property="leaderId" jdbcType="INTEGER" />
+  </resultMap>
+  <resultMap id="ResultMapWithBLOBs" type="com.yjh.domain.Major" extends="BaseResultMap" >
+    <result column="description" property="description" jdbcType="LONGVARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, name, sdept_id, leader_id
+  </sql>
+  <sql id="Blob_Column_List" >
+    description
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="ResultMapWithBLOBs" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    ,
+    <include refid="Blob_Column_List" />
+    from t_major
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from t_major
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.yjh.domain.Major" >
+    insert into t_major (id, name, sdept_id, 
+      leader_id, description)
+    values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{sdeptId,jdbcType=INTEGER}, 
+      #{leaderId,jdbcType=INTEGER}, #{description,jdbcType=LONGVARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.yjh.domain.Major" >
+    insert into t_major
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="name != null" >
+        name,
+      </if>
+      <if test="sdeptId != null" >
+        sdept_id,
+      </if>
+      <if test="leaderId != null" >
+        leader_id,
+      </if>
+      <if test="description != null" >
+        description,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="name != null" >
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="sdeptId != null" >
+        #{sdeptId,jdbcType=INTEGER},
+      </if>
+      <if test="leaderId != null" >
+        #{leaderId,jdbcType=INTEGER},
+      </if>
+      <if test="description != null" >
+        #{description,jdbcType=LONGVARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.yjh.domain.Major" >
+    update t_major
+    <set >
+      <if test="name != null" >
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="sdeptId != null" >
+        sdept_id = #{sdeptId,jdbcType=INTEGER},
+      </if>
+      <if test="leaderId != null" >
+        leader_id = #{leaderId,jdbcType=INTEGER},
+      </if>
+      <if test="description != null" >
+        description = #{description,jdbcType=LONGVARCHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKeyWithBLOBs" parameterType="com.yjh.domain.Major" >
+    update t_major
+    set name = #{name,jdbcType=VARCHAR},
+      sdept_id = #{sdeptId,jdbcType=INTEGER},
+      leader_id = #{leaderId,jdbcType=INTEGER},
+      description = #{description,jdbcType=LONGVARCHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.yjh.domain.Major" >
+    update t_major
+    set name = #{name,jdbcType=VARCHAR},
+      sdept_id = #{sdeptId,jdbcType=INTEGER},
+      leader_id = #{leaderId,jdbcType=INTEGER}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  
+  <select id="selectMajorList" resultMap="ResultMapWithBLOBs" parameterType="map" >
+    select * from t_major
+  </select>
+  <select id="queryMajorByName" parameterType="map" resultMap="BaseResultMap">
+  	select * from t_major where name like '%${name}%'
+  </select>
+  <select id="findMajorByNameAndSdeptId" parameterType="map" resultType="Integer">
+  	select count(*) from t_major 
+  	where name=#{name} 
+  	and sdept_id=#{sdeptId}
+  </select>
+   <select id="selectMajorBySdeptId" parameterType="map" resultMap="BaseResultMap">
+  	select * from t_major 
+  	where sdept_id=#{sdeptId}
+  </select>
+  <select id="getMajorList" parameterType="map" resultMap="BaseResultMap">
+  	select * from t_major 
+  </select>
+  <select id="loadMajorBySdeptId" parameterType="map" resultMap="BaseResultMap">
+  	select * from t_major where sdept_id=#{sdeptId}
+  </select>
+  
+   <select id="loadMajor" resultMap="BaseResultMap">
+  	select * from t_major 
+  </select>
+  
+  
+</mapper>

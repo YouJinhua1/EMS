@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body th:fragment="default">
+<div class="tab-pane">
+                <div class="check-div form-inline">
+                    <div class="col-xs-3">
+                        <button class="btn btn-info btn-md" data-toggle="modal" data-target="#saveModal">新增角色 </button>
+                    </div>
+                    <div class="col-xs-offset-1 col-xs-3">
+                                                      按状态筛选：<select id="auditStatus" name="available"
+										onchange="submit1(this)">
+										<option value="" selected>请选择</option>
+										<option value="1">激活</option>
+										<option value="0">冻结</option>
+								  </select>
+                    </div>
+                    <div class="col-xs-offset-1 col-xs-3" style=" padding-right: 40px;text-align: right;">
+                        <div class="input-group">
+							<input id="queryRoleByName" type="text" class="form-control" placeholder="根据角色名称查询!" name="name">
+							<span class="input-group-addon btn btn-primary" onclick="query()">soso</span>
+						</div>
+                    </div>
+                </div>
+                <div class="data-div">
+                <div class="row tableHeader">
+                        <div class="col-xs-2 ">
+                            角色名称
+                        </div>
+                        <div class="col-xs-2">
+                           角色状态
+                        </div>
+                        <div class="col-xs-2">
+                            更新时间
+                        </div>
+                        <div class="col-xs-2">
+                            更新者
+                        </div>
+                        <div class="col-xs-2">
+                           更新者IP地址
+                        </div>
+                        <div class="col-xs-2">
+                            操作
+                        </div>
+                    </div>
+                    <div class="tablebody" id="roleList">
+                    </div>
+                </div>
+                <div align="center">
+					<div th:include="/common/page::html"></div>
+			  	</div>
+</div>
+<!--增加信息产生模态框-->
+<div class="modal fade" id="saveModal" tabindex="-1" role="dialog"
+	aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form  method="post" id="saveRole">
+				<div role="tabpanel" class="tab-pane" id="profile6">
+					<div class="modal-body" >
+						<table class="table table-bordered " style="font-size: 20px;">
+							<tr style="text-align: center;">
+							    <td colspan="2">添加角色</td>
+						    </tr>　
+							<tr>
+								<td>角色名称</td>
+								<td><input type="text" name="name" style="width: 400px"/></td>
+							</tr>
+							<tr>
+								<td>角色描述</td>
+								<td><textarea name="remark"
+										style="width: 400px; height: 80px"></textarea></td>
+							</tr>
+							<tr>
+								<td>角色状态</td>
+								<td><input type="radio" name="status" value="1">激活&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input
+									type="radio" name="status" value="0" checked> 冻结</td>
+							</tr>
+						</table>
+					</div>
+					<!--模态框底部按钮-->
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<input type="submit" class="btn btn-primary" value="Submit" onclick="saveRole()" />
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<!--修改信息产生模态框-->
+<div class="modal fade" id="exampleModa9" tabindex="-1" role="dialog"
+	aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form th:action="@{/role/updateRole}" id="updateRole">
+				<div role="tabpanel" class="tab-pane" id="profile4">
+					<div class="modal-body">
+						<table class="table table-bordered " style="font-size: 20px;">
+							<tr  style="text-align: center;">
+								<td colspan="2">修改角色信息</td>
+							</tr>
+							<tr>
+								<!-- <td>角色id</td> -->
+								<td id="id"><input type="hidden" id="roleId" name="id" /></td>
+							</tr>
+							<tr>
+								<td>角色名称</td>
+								<td id="username"><input type="text" id="roleName" name="name" style="width: 400px"/></td>
+							</tr>
+							<tr  style="text-align: center;">
+								<td>角色状态</td>
+								<td><input type="radio"  id="roleStatus1" name="status" value="1">激活&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input
+									type="radio" id="roleStatus2" name="status" value="0"> 冻结</td>
+							</tr>
+							<tr>
+								<td>角色描述</td>
+								<td><textarea id="roleRemark" name="remark"
+										style="width: 400px; height: 80px"></textarea></td>
+							</tr>
+						</table>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal" onclick=closeModal()>Close</button>
+						<input type="button" class="btn btn-primary" onclick="update()"value="Submit" />
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<!--增加角色授权模态框-->
+<div class="modal fade" id="Modal4" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick=closeModal4()>&times;</button>
+                
+                  <h5 class="modal-title">当前为：<font color="0000CD"><span id="showRoleName"></span> </font>&nbsp;授权</h5> 
+
+                
+                
+                
+                <h4 class="modal-title" id="myModalLabel">
+                    <ul class="nav nav-tabs">
+                      <li class="active"><a  href="#tab1" data-toggle="tab">角色与权限</a></li>
+                     <li onclick="roleUser()"><a href="#tab2" data-toggle="tab">角色与用户</a></li>
+                    </ul>
+                </h4>
+            </div>
+            <div class="modal-body">
+            <div class="tabbable"> <!-- Only required for left/right tabs -->
+               <div class="tab-content">
+    	          <div class="tab-pane active" id="tab1">
+                        <ul id="permTree" class="ztree">
+                        </ul>
+                    <button class="btn btn-info saveRolePerm" type="button" onclick="saveRolePerm(this)">
+                        <i class="ace-icon fa fa-check bigger-110"></i>
+                        保存
+                    </button>
+  		          </div>
+                  <div class="tab-pane" id="tab2">
+                        <div class="row">
+		                       <div style="width:60%;height:250px;overflow:auto; float:left">
+		                       	<div class="box1 col-md-12">
+		                       			<div class="input-group">
+										<input style="width: 250px" id="queryUserByName" type="text" class="form-control" name="name"
+											 placeholder="根据用户名称查询!">
+										<span class="input-group-btn">
+										<input
+											class="btn btn-mini btn-primary" onclick="roleUser()" value="soso" style="width: 60px"/>
+										</span>	
+										</div>
+										待选列表
+										<table class="table table-bordered table-hover"  style="text-align: center">
+											<tr>
+												<td class="info">编号</td>
+												<td class="info">姓名</td>
+												<td class="info">身份证号</td>
+											</tr>
+											<tbody id="unSelectedTable">
+											</tbody>
+						               </table>
+		                           </div>
+		                       </div>
+		                       <div style="width:40%;height:250px;overflow:auto; float:right">
+		                       		<div>
+		                       		<a href="javascript:void(0)"  onclick="removeAllUser()">
+										    <span class="glyphicon glyphicon-trash col-xs-offset-5" aria-hidden="false"></span>
+									</a>
+		                       		</div>
+		                           <div class="box1 col-md-12">已选列表
+		                      		<ul class="list-group" id="selectedUserList">
+		                      		</ul>
+		                           </div>
+		                       </div>
+		                      <div align="right" style="margin-right:40px ">
+	                          <button class="btn btn-info saveRoleUser" type="button" onclick="saveRoleUser(this)">
+	                          <i class="ace-icon fa fa-check bigger-110"></i>保存</button>
+	                          </div>
+                    </div>
+                  </div>
+               </div>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+<script id="roleListTemplate" type="x-tmpl-mustache">
+{{#roleList}}
+	<div class="row">
+         <div class="col-xs-2 ">{{name}}</div>
+         <div class="col-xs-2">{{{showStatus}}}</div>
+         <div class="col-xs-2">{{showTime}}</div>
+         <div class="col-xs-2">{{{operator}}}</div>
+         <div class="col-xs-2">{{operateIp}}</div>
+         <div class="col-xs-2">
+			<shiro:hasPermission name="role:auth">
+				<a href="javascript:void(0)"  onclick="roleAuth(this)" dataId="{{id}}" dataName="{{name}}">
+					<button class="btn btn-success btn-xs" data-toggle="modal" data-target="#reviseUser">授权</button>
+				</a>
+			</shiro:hasPermission>
+			<shiro:hasPermission name="role:update">
+				<a href="javascript:void(0)"  id="roleUpdate" onclick="edit(this)" data="{{id}}">
+					 <button class="btn btn-success btn-xs" data-toggle="modal" data-target="#reviseUser">修改</button>
+				</a>
+			</shiro:hasPermission>
+			<shiro:hasPermission name="role:delete">
+				<a href="javascript:void(0)"  onclick="deleteRole(this)" dataId="{{id}}" dataName="{{name}}">					 
+					<button class="btn btn-danger btn-xs" data-toggle="modal" data-target="#deleteUser">删除</button>
+				</a>
+			</shiro:hasPermission>
+         </div>
+    </div>
+{{/roleList}}
+</script>
+<script type="text/javascript">
+//获取模板里面的HTML内容
+var template = $("#roleListTemplate").html();
+//用Mustache.parse()解析一下，让Mustache能够识别并渲染页面
+Mustache.parse(template);
+//分页的回调函数
+function pageCallBack(subData){
+	var rendered = Mustache.render(template,{
+		roleList:subData,
+		"showStatus": function() {
+            return this.status == 1 ? "<font color='green'>激活</font>": "<font color='red'>冻结</font>";
+        },
+        "showTime":function(){
+        	var d=new Date(this.operateTime);
+        	var times=d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+        	return times;
+        }
+	});
+	$("#roleList").html(rendered);
+}
+$(function() {
+	loadRoleList();
+});
+
+function loadRoleList(){
+	$.ajax({
+		url : "/role/roleList",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				initPage(result.data)
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+	function saveRole(){
+		$.ajax({
+	        url : "/role/saveRole",
+	        data: $("#saveRole").serializeArray(),
+	        async : true,
+	        type : "POST",
+	        dataType : "json",
+	        success : function(result){
+	        	alert(result.result);
+	        	if(result.result){
+	        		Notiflix.Notify.Success(result.msg);
+	        		loadRoleList();
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.failure("请求失败!");
+	        }
+	    });
+	}
+	function query() {
+		var name=$("#queryRoleByName").val();
+		$.ajax({
+	        url : "/role/queryRoleByName?name="+name,
+	        async : true,
+	        type : "POST",
+	        // 成功后开启模态框
+	        success : function(result){
+	        	if(result.result){
+	        	   initPage(result.data);
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Failure("请求失败!");
+	        },
+	        dataType : "json"
+	    });
+	}
+	function submit1(e) {
+		var status=$(e).val();
+		$.ajax({
+	        url : "/role/queryRoleByStatus?status="+status,
+	        async : true,
+	        type : "POST",
+	        // 成功后开启模态框
+	        success : function(result){
+	        	if(result.result){
+	        	   initPage(result.data);
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Failure("请求失败!");
+	        },
+	        dataType : "json"
+	    });
+	}
+	function edit(e){
+		var data=$(e).attr("data");
+	    $.ajax({
+	        url : "/role/findRoleById?data="+data,
+	        async : true,
+	        type : "POST",
+	        // 成功后开启模态框
+	        success : function(result){
+	        	if(result.result){
+	        		var data=result.data;
+	        		$("#roleId").val(data.id);
+	        		$("#roleName").val(data.name);
+	        		if(data.status==1){
+	        			$("#roleStatus1").prop("checked",true);
+	        		}else{
+	        			$("#roleStatus2").prop("checked",true);
+	        		}
+	        		$("#roleRemark").val(data.remark);
+	        		$('#exampleModa9').addClass("in")
+		     	    $('#exampleModa9').show();
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        	
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Failure("请求失败!");
+	        },
+	        dataType : "json"
+	    });
+	   
+	}
+	function update(){
+		var roleData=$("#updateRole").serializeArray();
+		$.ajax({
+	        url : "/role/updateRole",
+	        data: $("#updateRole").serializeArray(),
+	        async : true,
+	        type : "POST",
+	        success : function(result){
+	        	if(result.result){
+	        		Notiflix.Notify.Success(result.msg);
+	        		closeModal();
+	        		loadRoleList();
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Info("请求失败!");
+	        },
+	        dataType : "json"
+	    });
+	}
+	function closeModal(){
+		$('#exampleModa9').removeClass("in")
+	    $('#exampleModa9').hide();
+	}
+	function closeModal4(){
+		$("#unSelectedTable").empty();
+    	$("#selectedUserList").children().remove();
+    	$("#permTree").empty();
+    	if($("#tab2").hasClass("active")){
+    		$("#tab2").removeClass("active");
+    		$("#tab1").addClass("active");
+    	}
+		$('#Modal4').removeClass("in")
+	    $('#Modal4').hide();
+	}
+	function deleteRole(e){
+		var roleName=$(e).attr("dataName");
+		var roleId=$(e).attr("dataId");
+		Notiflix.Confirm.Show( '友情提示', '您确定要删除:'+roleName+'吗?', '是', '否', function(){   
+			$.ajax({
+		        url : "/role/deleteRole?id="+roleId,
+		        async : true,
+		        type : "POST",
+		        success : function(result){
+		        	if(result.result){
+		        		Notiflix.Notify.Success(result.msg);
+		        		loadRoleList();
+		        	}else{
+		        		Notiflix.Notify.Failure(result.msg);
+		        	}
+		        },
+		        error : function() {
+		        	Notiflix.Notify.Failure("请求失败");
+		        },
+		        dataType : "json"
+		    });
+		});
+	}
+		
+	function roleAuth(e){
+		var id=$(e).attr("dataId");
+		var roleName=$(e).attr("dataName");
+		 $.ajax({
+		        url : "/role/roleAuth?id="+id,
+		        async : true,
+		        type : "POST",
+		        // 成功后开启模态框
+		        success : function(result){
+		        	if(result.result){
+		        		var data=result.data;
+		        		//将后台的string转成json对象
+						var json= JSON.parse(result.msg);
+						//调用方法生成zTree需要的数据
+		        		getZTreeData(json);
+		        		//然后打开模态窗口
+		        		$(".saveRolePerm").attr("role_id",id);
+		        		$(".saveRoleUser").attr("role_id",id);
+		        		$("#showRoleName").empty();
+		        		$("#showRoleName").append(roleName);
+		        		$('#Modal4').addClass("in")
+			     	    $('#Modal4').show();
+		        	}else{
+		        		Notiflix.Notify.Info(result.msg);
+		        	}
+		        	
+		        },
+		        error : function() {
+		        	Notiflix.Notify.Info("请求失败");
+		        },
+		        dataType : "json"
+		    });
+	}
+	 // zTree
+	 /*  <!-- 树结构相关 开始 --> */
+	 var zTreeData = [];
+	 var setting = {
+	            check: {
+	                enable: true,
+	                chkDisabledInherit: true,
+	                chkboxType: {"Y": "ps", "N": "ps"}, //auto check 父节点 子节点
+	                autoCheckTrigger: true
+	            },
+	            data: {
+	                simpleData: {
+	                    enable: true,
+	                    rootPId: 0
+	                }
+	            },
+	            callback: {
+	                onClick: onClickTreeNode
+	            }
+	        };
+	 //点击节点，就打开子节点的事件
+	 function onClickTreeNode(e, treeId, treeNode) { // 绑定单击事件
+		 event.preventDefault();
+	     var zTree = $.fn.zTree.getZTreeObj("permTree");
+	     zTree.expandNode(treeNode);
+	 } 
+	 function getZTreeData(data){
+		 zTreeData=[];
+		 for(var i=0;i<data.length;i++){
+			 zTreeData.push({
+                 id: data[i].id,
+                 pId:data[i].parentId,
+                 name: data[i].name + ((data[i].type == 3) ? '(菜单)' : ''),
+                 checked: data[i].checked,
+                 dataId: data[i].id,
+                 chkDisabled:!data[i].hasPerm,
+             });
+		 }
+		 $.fn.zTree.init($("#permTree"), setting, zTreeData);
+	 }
+	 
+	 function getTreeSelectedId() {
+         var treeObj = $.fn.zTree.getZTreeObj("permTree");
+         var nodes = treeObj.getCheckedNodes(true);
+         var v = "";
+         for(var i = 0; i < nodes.length; i++) {
+                 v += "," + nodes[i].dataId;
+         }
+         return v.length > 0 ? v.substring(1): v;
+     }
+	 function saveRolePerm(e){
+		 var roleId=$(e).attr("role_id");
+		 var permIds=getTreeSelectedId();
+		 $.ajax({
+			 url: "/role/saveRolePerm",
+             data: {
+                 roleId: roleId,
+                 permIds: permIds
+             },
+             type: 'POST',
+             success: function (result) {
+                 if (result.result) {
+                	 Notiflix.Notify.Success(result.msg);
+                 } else {
+                	 Notiflix.Notify.Failure(result.msg);
+                 }
+             }
+		 });
+	 }
+	function roleUser(){
+		var name=$("#queryUserByName").val();
+		var roleId=$(".saveRoleUser").attr("role_id");
+		$.ajax({
+			 url: "/role/queryUser",
+            data:  {
+                name: name,
+                roleId: roleId
+            },
+            type: 'POST',
+            success: function (result) {
+                if (result.result) {
+                	var data=result.data.unSelectedUserList;
+                	var data2=result.data.selectedUserList;
+                	if(data!=null&&data.length>0){
+                		$("#unSelectedTable").empty();
+                		for(var i=0;i<data.length;i++){
+                    		$("#unSelectedTable").append("<tr onclick='selectUser(this)' data_id='"+data[i].id+"' data_name='"+data[i].name+"'><td class='info'>"+data[i].number+"</td><td class='info'>"+data[i].name+"</td><td class='info'>"+data[i].idNumber+"</td></tr>");
+                    	} 
+                	}
+					if(data2!=null&&data2.length>0){
+						$("#selectedUserList").children().remove();
+						for(var i=0;i<data2.length;i++){
+	                		$("#selectedUserList").prepend("<li id='user_"+data2[i].id+"' class='list-group-item' data_id='"+data2[i].id+"'>"+data2[i].name+"<span class='badge' onclick='deleteUser(this)'><font color='red'>X</font></span></li>");
+	                	}
+                	}else{
+                		Notiflix.Notify.Info("还没有任何用户，具有该身份角色！");
+                	}
+                } else {
+               	 Notiflix.Notify.Failure(result.msg);
+                }
+            }
+		 });
+	}
+	function selectUser(e){
+		var id=$(e).attr("data_id");
+		var name=$(e).attr("data_name");
+        if($("#user_"+id).attr("data_id")==id){
+        	 Notiflix.Notify.Info("该用户已有此角色身份，不能重复添加！");
+        }else{
+        	$("#selectedUserList").prepend("<li id='user_"+id+"' class='list-group-item' data_id='"+id+"'>"+name+"<span class='badge' onclick='deleteUser(this)'><font color='red'>X</font></span></li>");
+        }
+	}
+	function deleteUser(e){
+		$(e).parent("li").remove();
+	}
+	function removeAllUser(){
+		$("#selectedUserList").children().remove();
+	}
+	
+	function saveRoleUser(e){
+		var roleId=$(e).attr("role_id");
+		var userIds=getAllUserId();
+		$.ajax({
+			 url: "/role/saveRoleUser",
+            data: {
+                roleId: roleId,
+                userIds: userIds
+            },
+            type: 'POST',
+            success: function (result) {
+                if (result.result) {
+               	 Notiflix.Notify.Success(result.msg);
+                } else {
+               	 Notiflix.Notify.Failure(result.msg);
+                }
+            }
+		 });
+	}
+	function getAllUserId(){
+		 var nodes=$("#selectedUserList li")
+		 var v = "";
+         for(var i = 0; i < nodes.length; i++) {
+                 v += "," + $(nodes[i]).attr("data_id");
+         }
+         return v.length > 0 ? v.substring(1): v;
+	}
+</script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+<title>班级管理</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body th:fragment="default">
+<div style="padding: 20px 10px 10px 60px;">
+<script id="teacherListTemplate" type="x-tmpl-mustache">
+{{#teacherList}}
+	<tr>		
+		<td class="info">{{number}}</td>
+		<td class="info">{{name}}</td>
+		<td class="info">{{gender}}</td>
+        <td class="info">{{age}}</td>
+        <td class="info">{{nation}}</td>
+		<td class="info">{{politicsStatus}}</td>
+		<td class="info">{{showEntime}}</td>
+		<td class="info">{{idNumber}}</td>
+		<td class="info">{{sdeptName}}</td>
+		<shiro:hasPermission name="teacher:update">
+		    <td class="warning">
+			    <a href="javascript:void(0)"  id="roleUpdate" onclick="openUpdateModal(this)" data="{{id}}">
+				     <span class="glyphicon glyphicon-pencil col-xs-offset-5" aria-hidden="true"></span>
+			    </a>
+		    </td> 
+		</shiro:hasPermission>
+		<shiro:hasPermission name="teacher:delete">
+			<td class="warning">
+				<a href="javascript:void(0)"  onclick="deleteSdept(this)" dataId="{{id}}" dataName="{{name}}">
+					<font color="red"><span class="glyphicon glyphicon-trash col-xs-offset-5" aria-hidden="false"></span></font>
+				</a>
+			</td>
+	    </shiro:hasPermission>
+    </tr>
+{{/teacherList}}
+</script>
+<script type="text/javascript">
+var sdeptMap={};
+//获取模板里面的HTML内容
+var template = $("#teacherListTemplate").html();
+//用Mustache.parse()解析一下，让Mustache能够识别并渲染页面
+Mustache.parse(template);
+//分页的回调函数
+function pageCallBack(subData){
+	var rendered = Mustache.render(template,{teacherList:subData,
+		"showEntime":function(){
+        	var d=new Date(this.entime);
+        	var times=d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() ;
+        	return times;
+        }
+	});
+	$("#teacherList").html(rendered);
+}
+$(function() {
+	loadTeacherList();
+	loadSdeptList();
+});
+function loadTeacherList(){
+	$.ajax({
+		url : "/teacher/teacherList",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				initPage(result.data)
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+function loadSdeptList(){
+	$.ajax({
+		url : "/teacher/loadSdept",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				var data = result.data;
+				$("#queryByMajorSelect").children().remove();
+				$("#queryByMajorSelect").append("<option value='root' selected>请选择院系</option>");
+        		for(var i=0;i<data.length;i++){
+        			var option="<option value='"+data[i].id+"'>"+data[i].name+"</option>";
+        			$("#queryByMajorSelect").append(option);
+        			sdeptMap[data[i].id]=data[i];
+        		}
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+function openAddModal(){
+	$("#saveMajor")[0].reset();
+	$("#sdeptSelect").children().remove();
+	$("#sdeptSelect").append("<option value='root' selected>请选择院系</option>");
+	for(var key in sdeptMap){
+		var option="<option value='"+key+"'>"+sdeptMap[key].name+"</option>";
+		$("#sdeptSelect").append(option);
+	}
+	$("#exampleModa11").addClass("in");
+	$("#exampleModa11").show();
+}
+
+function closeAddModal(){
+	$("#exampleModa11").removeClass("in");
+	$("#exampleModa11").hide();
+}
+function saveMajor(){
+	var sdeptId=$("#sdeptSelect").val();
+	if(sdeptId=='root'){
+		Notiflix.Notify.Info("未选择所属院系！");
+		return;
+	}
+	$.ajax({
+        url : "/teacher/saveTeacher",
+        data: $("#saveMajor").serializeArray(),
+        async : true,
+        type : "POST",
+        dataType : "json",
+        success : function(result){
+        	if(result.result){
+        		Notiflix.Notify.Success(result.msg);
+        		closeAddModal();
+        		loadTeacherList();
+        	}else{
+        		Notiflix.Notify.Failure(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Failure("请求失败!");
+        }
+    }); 
+}
+function submit1(e){
+	var sdeptId=$(e).val();
+	$.ajax({
+        url : "/teacher/queryTeacherBySdeptId?sdeptId="+sdeptId,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+				initPage(result.data);
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+function query() {
+	var name=$("#queryMajorByName").val();
+	$.ajax({
+        url : "/teacher/queryTeacherByName?name="+name,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+				initPage(result.data);
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+function deleteSdept(e){
+	var majorName=$(e).attr("dataName");
+	var majorId=$(e).attr("dataId");
+	Notiflix.Confirm.Show( '友情提示', '您确定要删除:'+majorName+'吗?', '是', '否', function(){   
+		$.ajax({
+	        url : "/teacher/deleteTeacher?id="+majorId,
+	        async : true,
+	        type : "POST",
+	        success : function(result){
+	        	if(result.result){
+	        		Notiflix.Notify.Success(result.msg);
+	        		loadTeacherList();
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Failure("该教师还有职务，无法删除！");
+	        },
+	        dataType : "json"
+	    });
+	});
+}
+function openUpdateModal(e){
+	var data=$(e).attr("data");
+    $.ajax({
+        url : "/teacher/findTeacherById?data="+data,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+        		var data=result.data;
+        		$("#updateMajor")[0].reset();
+        		$("#updateSdeptSelect").children().remove();
+        		$("#updateTeacherPoliticsStatus").children().remove();
+        		$("#updateTeacherId").val(data.id);
+        		$("#updateTeacherIdNumber").val(data.idNumber);
+        		$("#updateTeacherNation").val(data.nation);
+        		$("#updateTeacherGender").val(data.gender);
+        		$("#updateTeacherAge").val(data.age);
+        		$("#updateTeacherName").val(data.name);
+        		if(data.politicsStatus=='党员'){
+        			var option1="<option value='党员' selected>党员</option>";
+        			var option2="<option value='群众' >群众</option>";
+        			$("#updateTeacherPoliticsStatus").append(option1);
+        			$("#updateTeacherPoliticsStatus").append(option2);
+        		}else{
+        			var option1="<option value='群众' selected>群众</option>";
+        			var option2="<option value='党员' >党员</option>";
+        			$("#updateTeacherPoliticsStatus").append(option1);
+        			$("#updateTeacherPoliticsStatus").append(option2);
+        		}
+        		for(var key in sdeptMap){
+        			if(data.sdeptId==key){
+        				var option="<option value='"+key+"' selected>"+sdeptMap[key].name+"</option>";
+	        			$("#updateSdeptSelect").append(option);
+        			}else{
+        				var option="<option value='"+key+"'>"+sdeptMap[key].name+"</option>";
+	        			$("#updateSdeptSelect").append(option);
+        			}
+        		}
+        		$("#exampleModa9").addClass("in");
+        		$("#exampleModa9").show();
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        	
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+function closeUpdateModal(){
+	$("#exampleModa9").removeClass("in");
+	$("#exampleModa9").hide();
+}
+function updateMajor(){
+	$.ajax({
+        url : "/teacher/updateTeacher",
+        data: $("#updateMajor").serializeArray(),
+        async : true,
+        type : "POST",
+        success : function(result){
+        	if(result.result){
+        		Notiflix.Notify.Success(result.msg);
+        		closeUpdateModal();
+        		loadTeacherList();
+        		
+        	}else{
+        		Notiflix.Notify.Failure(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+
+</script>
+<!--新增院系模态框-->
+<div class="modal fade" id="exampleModa11" tabindex="-1" role="dialog"
+	aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+		    <div class="modal-header">
+                  <h5 class="modal-title" align="center">添加教师</h5> 
+            </div>
+					<div class="modal-body" >
+					<form id="saveMajor">
+					   <div class="form-group">
+					    <label>所属院系</label>
+					    <select class="form-control selectpicker"  id="sdeptSelect" name="sdeptId">
+					    </select>
+					  </div>
+					  <div class="form-group">
+					    <label>姓名</label>
+					    <input type="text" class="form-control" name="name" placeholder="姓名">
+					  </div>
+					  <div class="form-group">
+					        <div class="col-md-3">
+					         	<label>民族</label>
+					        	<input type="text"  class="form-control" name="nation" placeholder="例如：汉族">
+					        </div>
+					        <div class="col-md-3">
+					         	<label>年龄</label>
+					        	<input type="text"  class="form-control" name="age" placeholder="年龄：18-60">
+					        </div>
+					        <div class="col-md-3">
+					        	 <label>性别</label>
+					        	 <input type="text"  class="form-control" name="gender" placeholder="性别：男或女">
+					        </div>
+					        <div class="col-md-3">
+					            <label>政治面貌</label>
+					            <select class="form-control selectpicker" name="politicsStatus">
+					        		<option value="群众" selected>群众</option>
+					        		<option value="党员">党员</option>
+					            </select>
+					        </div>
+					  </div><br><br>
+					  <div class="form-group">
+					    <label>身份证号</label>
+					    <input type="text"  class="form-control" name="idNumber" placeholder="身份证号">
+					  </div>
+					  <div class="form-group">
+					    <label>初始密码</label>
+					    <input type="text"  class="form-control" name="password" value="123456">
+					  </div>
+					<!--模态框底部按钮-->
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal" onclick="closeAddModal()">Close</button>
+						<button type="button" class="btn btn-primary"  onclick="saveMajor()">Submit</button>
+					</div>
+					</form>
+				</div>
+		</div>
+	</div>
+</div>
+<!--修改模态框-->
+<div class="modal fade" id="exampleModa9" tabindex="-1" role="dialog"
+	aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+		    <div class="modal-header">
+                  <h5 class="modal-title" align="center">教师信息修改</h5> 
+            </div>
+					<div class="modal-body" >
+					<form id="updateMajor">
+					  <input type="hidden" name="id" id="updateTeacherId">
+					  <input type="hidden" name="grade" id="updateTeacherNUmber">
+					  <input type="hidden" name="number" id="updateNumber">
+					  <div class="form-group">
+					    <label>所属院系</label>
+					    <select class="form-control selectpicker"  id="updateSdeptSelect" name="sdeptId">
+					    </select>
+					  </div>
+					  <div class="form-group">
+					    <label>姓名</label>
+					    <input type="text" class="form-control" id="updateTeacherName" name="name" placeholder="教师姓名">
+					  </div>
+					  <div class="form-group">
+					        <div class="col-md-3">
+					         	<label>民族</label>
+					        	<input type="text"  class="form-control" id="updateTeacherNation" name="nation" placeholder="例如：汉族">
+					        </div>
+					        <div class="col-md-3">
+					         	<label>年龄</label>
+					        	<input type="text"  class="form-control" id="updateTeacherAge" name="age" placeholder="年龄：18-60">
+					        </div>
+					        <div class="col-md-3">
+					        	 <label>性别</label>
+					        	 <input type="text"  class="form-control" id="updateTeacherGender" name="gender" placeholder="性别：男或女">
+					        </div>
+					        <div class="col-md-3">
+					            <label>政治面貌</label>
+					            <select class="form-control selectpicker" id="updateTeacherPoliticsStatus"  name="politicsStatus">
+					        		
+					            </select>
+					        </div>
+					  </div><br><br>
+					  <div class="form-group">
+					    <label>身份证号</label>
+					    <input type="text"  class="form-control"  id="updateTeacherIdNumber" name="idNumber" placeholder="身份证号">
+					  </div>
+					<!--模态框底部按钮-->
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal" onclick="closeUpdateModal()">Close</button>
+						<button type="button" class="btn btn-primary"  onclick="updateMajor()">Submit</button>
+					</div>
+					</form>
+				</div>
+		</div>
+	</div>
+</div>
+	<div class=" col-xs-8 col-md-9" style="margin-top: 20px;" align="center">
+	<div id="content">
+		<form id="form1" action="${path}/role/selectAllRole.do" method="post">
+			<div class="container">
+				<div class="row">
+					<div class="col-xs-12 col-xs-offset-1">
+
+						<input type="hidden" name="pageModel.pageNo"
+							value="${csc.pageModel.pageNo}" id="pageNo"> <input
+							type="hidden" name="totalPage" value="${csc.pageModel.totalPage}"
+							id="totalPage">
+						<div class="row">
+							<shiro:hasPermission name="teacher:save">
+							<div class="col-xs-3 col-xs-offset-0">
+							    	<h4><input class="btn btn-info" type="button" th:value="添加教师" onclick="openAddModal()"></h4>
+							</div>
+							</shiro:hasPermission>
+							<div class="col-xs-2 col-xs-offset-2">
+								<h4>条件查询	</h4>
+							</div>
+						</div>
+						<div class="row" style="margin-bottom: 5px;">
+							<div class="col-xs-3 col-xs-offset-0">
+								<font size="3px">
+									按院系筛选：<select id="queryByMajorSelect" name="sdeptId"
+										onchange="submit1(this)">
+									</select>
+								</font>
+								<!-- <font size="3px">
+									按年级筛选：<select id="queryByGradeSelect" name="sdeptId"
+										onchange="submit1(this)">
+									</select>
+								</font> -->
+							</div>
+							<div class="col-xs-4 col-xs-offset-1 ">
+								<div class="input-group">
+									<input id="queryMajorByName" type="text" class="form-control" name="name"
+										 placeholder="根据教师姓名查询!">
+									<span class="input-group-btn"><input type="button"
+										class="btn btn-primary" onclick="query()" value="soso" /></span>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+				<br>
+				<div class="row">
+					<div class="col-xs-10">
+						<table class="table table-bordered table-hover" id="mytable"
+							style="text-align: center">
+							<tr>
+								<td class="info">教职工号</td>
+								<td class="info">姓名</td>
+								<td class="info">性别</td>
+								<td class="info">年龄</td>
+								<td class="info">民族 </td>
+								<td class="info">政治面貌 </td>
+								<td class="info">入职时间 </td>
+								<td class="info">身份证号 </td>
+								<td class="info">所属院系 </td>
+								<shiro:hasPermission name="teacher:update">
+									<td class="warning">修改</td>
+								</shiro:hasPermission>
+								<shiro:hasPermission name="teacher:delete">
+									<td class="warning">删除</td>
+								</shiro:hasPermission>
+							</tr>
+							<tbody id="teacherList">
+							
+							</tbody>
+								
+						</table>
+						<div align="center">
+							<div th:include="/common/page::html"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+</div>
+</body>
+</html>

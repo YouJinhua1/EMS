@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>菜单目录</title>
+</head>
+<body th:fragment="default">
+<script  th:inline="javascript">
+var basePath = [[${#httpServletRequest.getContextPath()}]];
+	$(function() {
+		/*<![CDATA[*/
+		var data=[[${session.data}]];   
+		/*]]>*/
+		$('#treeMenu').treeview({
+			data : data,
+			//设置可展开的节点的图标
+			expandIcon : "glyphicon glyphicon-chevron-right",
+			collapseIcon: "glyphicon glyphicon-chevron-down",//可收缩的节点图标
+			//设置被选中的图标样式
+			//selectedIcon : "glyphicon glyphicon-check",
+			levels: 2,  
+			//文字和图标颜色 
+			color : "#FFFFFF",
+			//背景色 
+			backColor : "#4D5E70",
+			//鼠标悬浮颜色
+			onhoverColor : "#3D4E60",
+			//边框颜色 
+			borderColor : "#4D5E70",
+			//高亮选中
+			highlightSelected : true,
+			//选中的字体颜色 
+			selectedColor : "#FFFFFF",
+			//选中背景色
+			selectedBackColor : "#3D4E60",
+			//是否开启超链接
+			enableLinks : true,
+		});
+		//当鼠标移上去的时候
+		$(document).on("mouseover", "a", function() {
+			//去掉父目录的超链接下滑线
+			//if ($(this).attr("href") == '#') {
+				$(this).css({
+					"text-decoration" : "none"
+				});
+			//}
+		});
+		
+	});
+	//点击li也能展开或收缩，并且能够跳转
+	function itemOnclick(target){
+		//找到当前节点id
+		var nodeid = $(target).attr('data-nodeid');
+		var href=$(target).children("a").attr("href")
+		if(href!='#'){
+			window.location.href=href;
+		}
+		var tree = $('#treeMenu');
+		//获取当前节点对象
+		var node = tree.treeview('getNode', nodeid);
+		
+		if(node.state.expanded){ 
+		    //处于展开状态则折叠
+		    tree.treeview('collapseNode', node.nodeId);  
+		} else {
+		    //展开
+		    tree.treeview('expandNode', node.nodeId);
+		}
+	}
+</script>
+	<div id="treeMenu" style="font-size:16px;">
+	</div>
+</body>
+</html>
+
+
+
+

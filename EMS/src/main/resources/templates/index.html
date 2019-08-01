@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" th:href="@{/mytools/my.css}">
+<link rel="stylesheet" th:href="@{/bs/css/bootstrap.min.css}">
+<script type="text/javascript" th:src="@{/bs-tv/js/jquery-2.2.4.js}"></script>
+<script type="text/javascript" th:src="@{/bs/js/bootstrap.min.js}"></script>
+<script type="text/javascript" th:src="@{/mytools/my.js}"></script>
+<link rel="stylesheet" th:href="@{/notiflix/notiflix-1.3.0.min.css}">
+<script th:src="@{/notiflix/notiflix-1.3.0.min.js}"></script>
+</head>
+<script th:inline="javascript">
+$(function(){
+	var msg=[[${msg}]];
+	if(msg!=null){
+		Notiflix.Notify.Info(msg);
+	}
+});
+</script>
+<body>
+	<div id="img1">
+		<img th:src="@{/bs/img/11.png}">
+	</div>
+	<div id="img2">
+		<img th:src="@{/bs/img/11.png}">
+	</div>
+	<div id="img3">
+		<img th:src="@{/bs/img/11.png}">
+	</div>
+	<div id="container">
+		<div id="title" align="center">
+			<h1>教务管理系统</h1>
+		</div>
+		<div id="form">
+			<div align="center">
+				<font color="red"><span th:text="${msg}"/></font>
+				<form id="form_login" th:action="@{/login}" method="post">
+					<span><span class="font">账号：</span> &nbsp;&nbsp;<input
+						class="input" type="text" name="usercode"
+						th:placeholder="${msg1}==null?'username':${msg1}"><br>
+					</span> <span> <span class="font">密码：</span>&nbsp;&nbsp; <input
+						class="input" type="password" name="password"
+						th:placeholder="${msg2}==null?'password':${msg2}"><br>
+					</span>
+					<div id="bt_div">
+						<span id="but">
+							<button type="button" data-toggle="modal" data-target="#Moda"
+								data-whatever="@getbootstrap" class="btn btn-default"
+								data-dismiss="modal">注册</button>
+							<button type="submit">登录</button>
+						</span>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+	<!--增加信息产生模态框-->
+	<div class="modal fade" id="Moda" tabindex="-1" role="dialog"
+		aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-hidden="true">×</button>
+					<div align="center">
+						<h3>注册</h3>
+					</div>
+				</div>
+				<form action="${path}/user/register.do" method="get">
+					<div class="modal-body">
+						<div class="form-group">
+							<label for="usercode">账号</label> <input type="text"
+								name="usercode" class="form-control" placeholder="username" />
+
+						</div>
+						<div class="form-group">
+							<label for="password">密码</label> <input type="password"
+								name="password" class="form-control" id="password"
+								placeholder="password" />
+						</div>
+						<div class="form-group">
+							<label for="age">邮箱</label> <input type="text" name="email"
+								class="form-control" id="age" placeholder="xxxx@xxx.com" />
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<input type="submit" class="btn btn-primary" value="submit">
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+<title>资源管理</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body th:fragment="default">
+<div>
+<script th:inline="javascript">
+	var permTreeList;
+	var permMap={};//将查到的permList用map存起来，方便修改的时候使用，避免再查数据库。
+	$(function(){
+		 permTreeList=[[${permTreeList}]];
+		 $("#treeTable").treetable({
+			expandable : true,
+			clickableNodeNames:true,//点击节点名称也打开子节点.
+			expandLevel: 2,
+			theme : "vsStyle",
+			initialState : "collapsed",//初始全部折叠
+			//expandable : true
+			clickableNodeNames : true,//点击节点名称也打开子节点.
+			indent : 12//每个分支缩进的像素数。
+		 });
+		 var permList=[[${permList}]];
+		 for(var i=0;i<permList.length;i++){
+			 permMap[permList[i].id]=permList[i];
+		 }
+	});
+	function expandAll(){
+		$("#treeTable").treetable("expandAll");
+	}
+	function refresh(){
+		window.location.href="/perm/permList";
+	}
+	function collapseAll(){
+		$("#treeTable").treetable("collapseAll");
+	}
+	function closeAddModal(){
+		$("#addModal").removeClass("in");
+		$("#addModal").hide();
+		$("#addPermForm")[0].reset();
+	}
+	function closeUpdateModal(){
+		$("#updateModal").removeClass("in");
+		$("#updateModal").hide();
+		$("#updatePermForm")[0].reset();
+	}
+	function addPerm(){
+		$("#permSelect").children().remove();
+		for(var i=0;i<permTreeList.length;i++){
+			 var perm=permTreeList[i]; 
+			 var option="<option value='"+perm.id+"'>|--"+perm.name+"</option>";
+			 $("#permSelect").append(option); 
+			 var level=1;
+			 var split="&nbsp;&nbsp;";
+			 if(perm.nodes&&perm.nodes.length>0){
+				 appendSubPerm(perm.nodes,split);
+			 }
+		}
+		$("#addModal").addClass("in");
+		$("#addModal").show();
+	}
+	function appendSubPerm(nodes,split){
+		for(var i=0;i<nodes.length;i++){
+			 var node=nodes[i]; 
+			 var option="<option value='"+node.id+"'>"+split+"|--"+node.name+"</option>";
+			 $("#permSelect").append(option);
+			 if(node.nodes&&node.nodes.length>0){
+				 split+=split;
+				 appendSubPerm(node.nodes,split);
+			 }
+		}
+	}
+	function addSubmit(){
+		$.ajax({
+	        url : "/perm/savePerm",
+	        data: $("#addPermForm").serializeArray(),
+	        async : true,
+	        type : "POST",
+	        success : function(result){
+	        	if(result.result){
+	        		Notiflix.Notify.Success(result.msg);
+	        		$("#addPermForm")[0].reset();
+	        		window.location.href="/perm/permList"
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Info("请求失败!");
+	        },
+	        dataType : "json"
+	    });
+	}
+	function updatePerm(e){
+		var id=$(e).attr("data_id");
+		var updatePerm=permMap[id];
+		$("#permUpdateSelect").children().remove();
+		for(var i=0;i<permTreeList.length;i++){
+			 var perm=permTreeList[i]; 
+			 if(updatePerm.parentId==perm.id){
+				 var option="<option value='"+perm.id+"' selected>|--"+perm.name+"</option>";
+				 $("#permUpdateSelect").append(option);
+			 }else{
+				 var option="<option value='"+perm.id+"'>|--"+perm.name+"</option>";
+				 $("#permUpdateSelect").append(option);
+			 }
+			 var split="&nbsp;&nbsp;";
+			 if(perm.nodes&&perm.nodes.length>0){
+				 appendUpdateSubPerm(perm.nodes,split,updatePerm);
+			 }
+		}
+		$("#permUpdateId").val(updatePerm.id);
+		$("#permUpdateName").val(updatePerm.name);
+		$("#permUpdateCode").val(updatePerm.code);
+		$("#permUpdateType").val(updatePerm.type);
+		$("#permUpdateUrl").val(updatePerm.url);
+		$("#updateModal").addClass("in");
+		$("#updateModal").show();
+	}
+	
+	function updateSubmit(){
+		$.ajax({
+			url : "/perm/updatePerm",
+	        data: $("#updatePermForm").serializeArray(),
+	        async : true,
+	        type : "POST",
+	        success : function(result){
+	        	if(result.result){
+	        		Notiflix.Notify.Success(result.msg);
+	        		window.location.href="/perm/permList"
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Info("请求失败!");
+	        },
+	        dataType : "json"
+	    });
+	}
+	
+	function appendUpdateSubPerm(nodes,split,updatePerm){
+		for(var i=0;i<nodes.length;i++){
+			 var node=nodes[i]; 
+			 if(updatePerm.parentId==node.id){
+				 var option="<option value='"+node.id+"' selected>"+split+"|--"+node.name+"</option>";
+				 $("#permUpdateSelect").append(option);
+			 }else{
+				 var option="<option value='"+node.id+"'>"+split+"|--"+node.name+"</option>";
+				 $("#permUpdateSelect").append(option);
+			 }
+			 if(node.nodes&&node.nodes.length>0){
+				 split+=split;
+				 appendUpdateSubPerm(node.nodes,split,updatePerm);
+			 }
+		}
+	}
+	function deletePerm(e){
+		var permId=$(e).attr("data_id");
+		var permName=$(e).attr("data_name");
+		Notiflix.Confirm.Show( '友情提示', '您确定要删除:'+permName+'吗?', '是', '否', function(){   
+			 $.ajax({
+		        url : "/perm/deletePerm?id="+permId,
+		        async : true,
+		        type : "POST",
+		        success : function(result){
+		        	if(result.result){
+		        		Notiflix.Notify.Success(result.msg);
+		        		window.location.href="/perm/permList"
+		        	}else{
+		        		Notiflix.Notify.Failure(result.msg);
+		        	}
+		        },
+		        error : function() {
+		        	Notiflix.Notify.Failure("请求失败");
+		        },
+		        dataType : "json"
+		    }); 
+		});
+	}
+</script>
+<div  >
+	<div id="content">
+		<div class="container" style="margin-left: 20px;">
+			<div class="row" style="margin-left: 0px">
+				<h4>资源列表</h4>
+			</div>
+			<div class="row" style="margin-left: 0px">
+				<div class="btn-group">
+					<button type="button" class="btn btn-info" onclick="addPerm()">添加资源</button>
+					<button type="button" class="btn btn-info" onclick="expandAll()">全部展开</button>
+					<button type="button" class="btn btn-info" onclick="collapseAll()">全部收起</button>
+					<button type="button" class="btn btn-info" onclick="refresh()">刷新</button>
+				</div>
+				<span class=" col-xs-offset-6"><font color="#3665B3"
+					size="4px">请谨慎操作！！！</font></span>
+			</div>
+			<div class="row">
+				<div class="col-xs-11" align="center">
+				<div id="permList">
+				
+				</div>
+				<table class="table table-striped table-hover" id="treeTable">
+						<tr>
+							<td class="info">资源名称</td>
+							<td class="info">资源类型</td>
+							<td class="info">资源Level</td>
+							<td class="info">权限码</td>
+							<td class="info">资源URL</td>
+							<td class="info">更新时间</td>
+							<shiro:hasPermission name="perm:update">
+								<td class="warning">修改</td>
+							</shiro:hasPermission>
+							<shiro:hasPermission name="perm:delete">
+								<td class="warning">删除</td>
+							</shiro:hasPermission>
+						</tr>
+						<tbody>
+						<tr  th:each="perm,permStatus:${permList}" th:data-tt-id="${perm.id}" th:data-tt-parent-id="${perm.parentId}">
+						    <td class="info" th:text="${perm.name}"/>
+						    <span th:switch="${perm.type}">
+									     <span th:case="3">
+									     	<td class="info" th:text="菜单"/>
+									     </span>
+									     <span th:case="2">
+									     	<td class="info" th:text="按钮"/>
+									     </span>
+							</span>
+							<td class="info" th:text="${perm.level}"/>
+							<td class="info" th:text="${perm.code}"/>
+							<td class="info" th:text="${perm.url}"/>
+							<td class="info" th:text="${#dates.format(perm.operateTime,'yyyy-MM-dd HH:mm:ss')}"/>
+							<shiro:hasPermission name="perm:update">
+							<td class="warning">
+								 <a href="javascript:void(0)"  id="permUpdate" onclick="updatePerm(this)" th:data_id="${perm.id}">
+							 		<span class="glyphicon glyphicon-pencil col-xs-offset-2" aria-hidden="true"></span>
+							 	</a>
+							</td> 
+							</shiro:hasPermission>
+							<shiro:hasPermission name="perm:delete">
+							<td class="warning">
+							 	<a href="javascript:void(0)"  onclick="deletePerm(this)" th:data_id="${perm.id}" th:data_name="${perm.name}">
+							   	 	<font color="red"><span class="glyphicon glyphicon-trash col-xs-offset-2" aria-hidden="false"></span></font>
+							 	</a>
+							</td>
+							</shiro:hasPermission> 
+  						</tr>
+  						</tbody>
+				</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- 添加资源模态============================================== -->
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick=closeAddModal()>&times;</button>
+                  <h5 class="modal-title" align="center">添加资源</h5> 
+            </div>
+            <div class="modal-body">
+            	<form id="addPermForm">
+					  <div class="form-group">
+					    <label>所属层级</label>
+					    <select class="form-control selectpicker" id="permSelect" name="parentId"></select>
+					  </div>
+					  <div class="form-group">
+					    <label>资源名称</label>
+					    <input type="text" class="form-control" name="name" placeholder="资源名称">
+					  </div>
+					   <div class="form-group">
+					    <label>资源类型</label>
+					    <select class="form-control selectpicker" name="type" placeholder="默认为菜单">
+					    	<option value="3" selected>菜单</option>
+					    	<option value="2">按钮</option>
+					    	<option value="1">其他</option>
+					    </select>
+					  </div>
+					  <div class="form-group">
+					    <label>权限码</label>
+					    <input type="text" class="form-control" name="code"  placeholder="例如：perm:save,不填默认值为：“#”">
+					  </div>
+					  <div class="form-group">
+					    <label>URL</label>
+					    <input type="text" class="form-control" name="url"  placeholder="例如：/perm/permSave,不填默认值为：“#”">
+					  </div>
+					  <button type="button" class="btn btn-info" onclick="addSubmit()">Submit</button>
+				</form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 修改资源模态============================================== -->
+<div class="modal fade" id="updateModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick=closeUpdateModal()>&times;</button>
+                  <h5 class="modal-title" align="center">修改资源信息</h5> 
+            </div>
+            <div class="modal-body">
+            	<form id="updatePermForm">
+            		  <input type="hidden" class="form-control" id="permUpdateId" name="id">
+					  <div class="form-group">
+					    <label>所属层级</label>
+					    <select class="form-control selectpicker" id="permUpdateSelect" name="parentId"></select>
+					  </div>
+					  <div class="form-group">
+					    <label>资源名称</label>
+					    <input type="text" class="form-control" id="permUpdateName" name="name" placeholder="资源名称">
+					  </div>
+					   <div class="form-group">
+					    <label>资源类型</label>
+					    <select class="form-control selectpicker" id="permUpdateType" name="type" placeholder="默认为菜单">
+					    	<option value="3">菜单</option>
+					    	<option value="2">按钮</option>
+					    	<option value="1">其他</option>
+					    </select>
+					  </div>
+					  <div class="form-group">
+					    <label>权限码</label>
+					    <input type="text" class="form-control" id="permUpdateCode" name="code">
+					  </div>
+					  <div class="form-group">
+					    <label>URL</label>
+					    <input type="text" class="form-control" id="permUpdateUrl" name="url"  placeholder="例如：/perm/permSave,不填默认值为：“#”">
+					  </div>
+					  <button type="button" class="btn btn-info" onclick="updateSubmit()">Submit</button>
+				</form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</body>
+</html>
+
+
+<!-- ajax加载的方式 -->
+<!-- <script type="text/javascript">
+        $(function(){
+            var option = {
+                theme:'vsStyle',
+                expandLevel : 2,
+                beforeExpand : function($treeTable, id) {
+                    //判断id是否已经有了孩子节点，如果有了就不再加载，这样就可以起到缓存的作用
+                    if ($('.' + id, $treeTable).length) { return; }
+                    //这里的html可以是ajax请求
+                    var html = '<tr id="8" pId="6"><td>5.1</td><td>可以是ajax请求来的内容</td></tr>'
+                             + '<tr id="9" pId="6"><td>5.2</td><td>动态的内容</td></tr>';
+
+                    $treeTable.addChilds(html);
+                },
+                onSelect : function($treeTable, id) {
+                    window.console && console.log('onSelect:' + id);
+                    
+                }
+
+            };
+            $('#treeTable1').treeTable(option);
+        });
+    </script> -->

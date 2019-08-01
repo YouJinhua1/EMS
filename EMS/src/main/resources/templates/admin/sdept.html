@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+<title>院系管理</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body th:fragment="default">
+<div style="padding: 20px 10px 10px 60px;">
+<script id="sdeptListTemplate" type="x-tmpl-mustache">
+{{#sdeptList}}
+	<tr>		
+		<td class="info">{{name}}</td>
+		<td class="info">{{leaderName}}</td>
+		<td class="info">{{phone}}</td>
+		<shiro:hasPermission name="sdept:update">
+		    <td class="warning">
+			    <a href="javascript:void(0)"  id="roleUpdate" onclick="edit(this)" data="{{id}}">
+				     <span class="glyphicon glyphicon-pencil col-xs-offset-5" aria-hidden="true"></span>
+			    </a>
+		    </td> 
+		</shiro:hasPermission>
+		<shiro:hasPermission name="sdept:delete">
+			<td class="warning">
+				<a href="javascript:void(0)"  onclick="deleteSdept(this)" dataId="{{id}}" dataName="{{name}}">
+					<font color="red"><span class="glyphicon glyphicon-trash col-xs-offset-5" aria-hidden="false"></span></font>
+				</a>
+			</td>
+	    </shiro:hasPermission>
+    </tr>
+{{/sdeptList}}
+</script>
+<script type="text/javascript">
+    var leaderMap={};
+	//获取模板里面的HTML内容
+	var template = $("#sdeptListTemplate").html();
+	//用Mustache.parse()解析一下，让Mustache能够识别并渲染页面
+	Mustache.parse(template);
+	//分页的回调函数
+	function pageCallBack(subData){
+		var rendered = Mustache.render(template,{sdeptList:subData});
+		$("#sdeptList").html(rendered);
+	}
+	$(function() {
+		loadSdeptList();
+		$.ajax({
+	        url : "/sdept/getLeader",
+	        async : true,
+	        type : "POST",
+	        success : function(result){
+	        	if(result.result){
+	        		var data = result.data;
+	        		for(var i=0;i<data.length;i++){
+	        			leaderMap[data[i].id]=data[i];
+	        		}
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Failure("请求失败");
+	        },
+	        dataType : "json"
+	    });
+	});
+	function loadSdeptList(){
+		$.ajax({
+			url : "/sdept/sdeptList",
+			async : true,
+			type : "POST",
+			success : function(result) {
+				if (result.result) {
+					initPage(result.data)
+				} else {
+					Notiflix.Notify.Failure(result.msg);
+				}
+			},
+			error : function() {
+				Notiflix.Notify.Failure("请求失败");
+			},
+			dataType : "json"
+		});
+	}
+	function getLeader(){
+		$("#saveSdept")[0].reset();
+		$("#leaderSelect").children().remove();
+		$("#leaderSelect").append("<option value='root' selected>请选择院系负责人</option>");
+		for(var key in leaderMap){
+			var option="<option value='"+key+"'>"+leaderMap[key].name+"</option>";
+			$("#leaderSelect").append(option);
+		}
+		$("#exampleModa11").addClass("in");
+		$("#exampleModa11").show();
+	}
+	function closeAddModal(){
+		$("#exampleModa11").removeClass("in");
+		$("#exampleModa11").hide();
+	}
+	function saveSdept(){
+		var leaderId=$("#leaderSelect").val();
+		if(leaderId=='root'){
+			Notiflix.Notify.Info("未选择院系负责人！");
+			return;
+		}
+		$.ajax({
+	        url : "/sdept/saveSdept",
+	        data: $("#saveSdept").serializeArray(),
+	        async : true,
+	        type : "POST",
+	        dataType : "json",
+	        success : function(result){
+	        	if(result.result){
+	        		Notiflix.Notify.Success(result.msg);
+	        		closeAddModal();
+	        		loadSdeptList();
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Failure("请求失败!");
+	        }
+	    }); 
+	}
+	function query() {
+		var name=$("#querySdeptByName").val();
+		$.ajax({
+	        url : "/sdept/querySdeptByName?name="+name,
+	        async : true,
+	        type : "POST",
+	        // 成功后开启模态框
+	        success : function(result){
+	        	if(result.result){
+					initPage(result.data);
+	        	}else{
+	        		Notiflix.Notify.Info(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Info("请求失败!");
+	        },
+	        dataType : "json"
+	    });
+	}
+	
+	function closeUpdateModal(){
+		$("#updateSdeptForm")[0].reset();
+		$("#exampleModa9").removeClass("in");
+		$("#exampleModa9").hide();
+	}
+	function edit(e){
+		var data=$(e).attr("data");
+	    $.ajax({
+	        url : "/sdept/findSdeptById?data="+data,
+	        async : true,
+	        type : "POST",
+	        // 成功后开启模态框
+	        success : function(result){
+	        	if(result.result){
+	        		var data=result.data;
+	        		$("#sdeptId").val(data.id);
+	        		$("#sdeptName").val(data.name);
+	        		$("#sdeptPhone").val(data.phone);
+	        		$("#sdeptLeader").children().remove();
+	        		for(var key in leaderMap){
+	        			if(data.leaderId==key){
+	        				var option="<option value='"+key+"' selected>"+leaderMap[key].name+"</option>";
+		        			$("#sdeptLeader").append(option);
+	        			}else{
+	        				var option="<option value='"+key+"'>"+leaderMap[key].name+"</option>";
+		        			$("#sdeptLeader").append(option);
+	        			}
+	        		}
+	        		$('#exampleModa9').addClass("in")
+		     	    $('#exampleModa9').show();
+	        	}else{
+	        		Notiflix.Notify.Info(result.msg);
+	        	}
+	        	
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Info("请求失败!");
+	        },
+	        dataType : "json"
+	    });
+	   
+	}
+	function updateSdept(){
+		$.ajax({
+	        url : "/sdept/updateSdept",
+	        data: $("#updateSdeptForm").serializeArray(),
+	        async : true,
+	        type : "POST",
+	        success : function(result){
+	        	if(result.result){
+	        		Notiflix.Notify.Success(result.msg);
+	        		closeUpdateModal();
+	        		loadSdeptList();
+	        		
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Info("请求失败!");
+	        },
+	        dataType : "json"
+	    });
+	}
+	
+	function deleteSdept(e){
+		var sdepteName=$(e).attr("dataName");
+		var sdeptId=$(e).attr("dataId");
+		Notiflix.Confirm.Show( '友情提示', '您确定要删除:'+sdepteName+'吗?', '是', '否', function(){   
+			$.ajax({
+		        url : "/sdept/deleteSdept?id="+sdeptId,
+		        async : true,
+		        type : "POST",
+		        success : function(result){
+		        	if(result.result){
+		        		Notiflix.Notify.Success(result.msg);
+		        		loadSdeptList();
+		        	}else{
+		        		Notiflix.Notify.Failure(result.msg);
+		        	}
+		        },
+		        error : function() {
+		        	Notiflix.Notify.Failure("该院系下尚有专业，无法删除！");
+		        },
+		        dataType : "json"
+		    });
+		});
+	}
+</script>
+<div class=" col-xs-8 col-md-9" style="margin-top: 20px;" align="center">
+	<div id="content">
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-12 col-xs-offset-1">
+				<div class="row">
+					<shiro:hasPermission name="sdept:save">
+						<div class="col-xs-3 col-xs-offset-0">
+						    <h4>
+							<input class="btn btn-info" type="button"
+													onclick="getLeader()" th:value="新增学院">
+							</h4>
+						</div>
+					</shiro:hasPermission>
+			<div class="col-xs-2 col-xs-offset-2">
+						<h4>条件查询</h4></div></div>
+				<div class="row" style="margin-bottom: 5px;">
+					<div class="col-xs-4 col-xs-offset-4 ">
+						<div class="input-group">
+							<input id="querySdeptByName" type="text" class="form-control"
+								name="name" placeholder="根据学院名称查询!"> <span
+								class="input-group-btn"><input type="button"
+								class="btn btn-primary" onclick="query()" value="soso" /></span>
+						</div>
+					</div>
+					</div></div></div><br>
+				<div class="row">
+					<div class="col-xs-10">
+						<table class="table table-bordered table-hover" id="mytable"
+							style="text-align: center">
+							<tr>
+								<td class="info">学院名称</td>
+								<td class="info">学院负责人</td>
+								<td class="info">办公室电话</td>
+								<shiro:hasPermission name="sdept:update">
+									<td class="warning">修改</td>
+								</shiro:hasPermission>
+								<shiro:hasPermission name="sdept:delete">
+									<td class="warning">删除</td>
+								</shiro:hasPermission>
+							</tr>
+							<tbody id="sdeptList">
+
+							</tbody>
+						</table>
+						<div align="center">
+							<div th:include="/common/page::html"></div>
+						</div>
+					</div>
+				</div></div>
+			</div>
+		</div>
+<!--新增院系模态框-->
+<div class="modal fade" id="exampleModa11" tabindex="-1" role="dialog"
+	aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+		    <div class="modal-header">
+                  <h5 class="modal-title" align="center">新增院系</h5> 
+            </div>
+					<div class="modal-body" >
+					<form id="saveSdept">
+					  <div class="form-group">
+					    <label>院系名称</label>
+					    <input type="text" class="form-control" name="name" placeholder="院系名称">
+					  </div>
+					  <div class="form-group">
+					    <label>院系负责人</label>
+					    <select class="form-control selectpicker"  id="leaderSelect" name="leaderId">
+					    </select>
+					  </div>
+					  <div class="form-group">
+					    <label>办公室电话</label>
+					    <input type="text" class="form-control" name="phone"  placeholder="办公室电话">
+					  </div>
+				
+					<!--模态框底部按钮-->
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal" onclick="closeAddModal()">Close</button>
+						<button type="button" class="btn btn-primary"  onclick="saveSdept()">Submit</button>
+					</div>
+					</form>
+				</div>
+		</div>
+	</div>
+</div>
+<!--修改模态框-->
+<div class="modal fade" id="exampleModa9" tabindex="-1" role="dialog"
+	aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+				<div role="tabpanel" class="tab-pane" id="profile4">
+					<div class="modal-body">
+					<form id="updateSdeptForm">
+						<input type="hidden" id="sdeptId" name="id" />
+					  <div class="form-group">
+					    <label>院系名称</label>
+					    <input type="text" class="form-control"  id="sdeptName" name="name" placeholder="院系名称">
+					  </div>
+					  <div class="form-group">
+					    <label>院系负责人</label>
+					    <select class="form-control selectpicker"  id="sdeptLeader" name="leaderId">
+					    </select>
+					  </div>
+					  <div class="form-group">
+					    <label>办公室电话</label>
+					    <input type="text" class="form-control"  id="sdeptPhone" name="phone"  placeholder="办公室电话">
+					  </div>
+				
+					<!--模态框底部按钮-->
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal" onclick="closeUpdateModal()">Close</button>
+						<button type="button" class="btn btn-primary"  onclick="updateSdept()">Submit</button>
+				    </div>
+				    </form>
+				</div>
+		</div>
+	</div>
+</div>
+
+</div>
+</div>
+</body>
+</html>

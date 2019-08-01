@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+<title>班级管理</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body th:fragment="default">
+<script id="courseListTemplate" type="x-tmpl-mustache">
+{{#courseList}}
+	<div class="row">
+         <div class="col-xs-1">{{courseno}}</div>
+         <div class="col-xs-2">{{name}}</div>
+         <div class="col-xs-1">{{credit}}</div>
+		 <div class="col-xs-1">{{period}}</div>
+         <div class="col-xs-1">{{teacherName}}</div>
+         <div class="col-xs-1">{{showStartTime}}</div>
+         <div class="col-xs-1">{{showEndTime}}</div>
+         <div class="col-xs-1">{{classroom}}</div>
+		 <div class="col-xs-1">{{majorName}}</div>
+         <div class="col-xs-2">
+			<div class="btn-group" onclick="selectCourse(this)" data="{{id}}" teacher_id={{teacherId}}>
+					 <button type="button" class="btn {{selected}} btn-xs" >已选</button>
+  					 <button type="button" class="btn {{unselected}} btn-xs">未选</button>
+			</div>
+         </div>
+    </div>
+{{/courseList}}
+</script>
+<script type="text/javascript">
+var majorMap={};
+//获取模板里面的HTML内容
+var template = $("#courseListTemplate").html();
+//用Mustache.parse()解析一下，让Mustache能够识别并渲染页面
+Mustache.parse(template);
+//分页的回调函数
+function pageCallBack(subData){
+	var rendered = Mustache.render(template,{
+		courseList:subData,
+        "showStartTime":function(){
+        	var d=new Date(this.starttime);
+        	var times=d.getFullYear() + '-' + (d.getMonth() + 1);
+        	return times;
+        },
+	 	"showEndTime":function(){
+     	var d=new Date(this.endtime);
+     	var times=d.getFullYear() + '-' + (d.getMonth() + 1);
+     	return times;
+    	},
+        "selected":function(){
+        	if(this.selectStatus){
+        		return "btn-primary";
+        	}else{
+        		return "btn-default";
+        	}
+        },
+ 		"unselected":function(){
+ 			if(this.selectStatus){
+        		return "btn-default";
+        	}else{
+        		return "btn-primary";
+        	}
+        }
+	});
+	$("#courseList").html(rendered);
+}
+$(function() {
+	loadCourseList();
+	loadMajor();
+});
+function loadCourseList(){
+	$.ajax({
+		url : "/student/courseList",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				initPage(result.data);
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+function loadMajor(){
+	$.ajax({
+		url : "/student/loadMajor",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				var majorList=result.data;
+				for(var i=0;i<majorList.length;i++){
+					var major=majorList[i];
+					var option="<option value='"+major.id+"'>"+major.name+"</option>";
+					$("#majorSelect").append(option);
+					majorMap[major.id]=major;
+				}
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+
+function majorChange(e){
+	var majorId=$(e).val();
+	$.ajax({
+        url : "/student/queryCourseByMajorId?majorId="+majorId,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+				initPage(result.data);
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+
+function query() {
+	var name=$("#queryRoleByName").val();
+	$.ajax({
+        url : "/student/queryCourseByName?name="+name,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+				initPage(result.data);
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+function selectCourse(e){
+	var id=$(e).attr("data");
+	var teacherId=$(e).attr("teacher_id");
+	var bts=$(e).children();
+	//设置一个标识，判断是退课操作还是选课操作
+	var flag=true;
+	if($(bts[0]).hasClass("btn-primary")){
+		$(bts[0]).removeClass("btn-primary").addClass("btn-default");
+		$(bts[1]).removeClass("btn-default").addClass("btn-primary");
+		flag=false;
+	}else{
+		$(bts[0]).removeClass("btn-default").addClass("btn-primary");
+		$(bts[1]).removeClass("btn-primary").addClass("btn-default");
+	}
+	$.ajax({
+	        url : flag?"/student/saveSelectedCourse?courseId="+id+"&teacherId="+teacherId : "/student/deleteSelectedCourse?courseId="+id,
+	        async : true,
+	        type : "POST",
+	        success : function(result){
+	        	if(result.result){
+	        		Notiflix.Notify.Info(result.msg);
+	        		loadCourseList();
+	        	}else{
+	        		Notiflix.Notify.Info(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Info("请求失败!");
+	        },
+	        dataType : "json"
+	});
+}
+</script>
+<div class="tab-pane">
+         <div class="check-div form-inline">
+         		 <div class=" col-xs-2">
+                      <font color="2A00F">待选课程列表</font>                     
+	             </div>
+	             <div class=" col-xs-3 col-xs-offset-1">
+	                                               按专业筛选：<select id="majorSelect" name="available" onchange="majorChange(this)">
+				                        <option value="" selected>请选择</option>
+								 </select>
+	             </div>
+	             <div class="col-xs-6" style=" padding-right: 40px;text-align: right;">
+	                    <div class="input-group">
+							<input id="queryRoleByName" type="text" class="form-control" placeholder="输入课程名称查询!" name="name">
+							<span class="input-group-addon btn btn-primary" onclick="query()">soso</span>
+			   			</div>
+	             </div>
+         </div>
+         <div class="data-div">
+           		 <div class="row tableHeader">
+	                  <div class="col-xs-1 ">课程编号 </div>
+	                  <div class="col-xs-2">课程名称</div>
+	                  <div class="col-xs-1">学分</div>
+	                  <div class="col-xs-1">学时</div>
+	                  <div class="col-xs-1">任课教师</div>
+	                  <div class="col-xs-1">开课时间</div>
+	                  <div class="col-xs-1">结课时间</div>
+	                  <div class="col-xs-1">上课教室</div>
+	                  <div class="col-xs-1">所属专业</div>
+	                  <div class="col-xs-2">操作</div>
+                  </div>
+                  <div class="tablebody" id="courseList">
+                  </div>
+        </div>
+        <div align="center"><div th:include="/common/page::html"></div></div>
+</div>
+<script type="text/javascript">
+
+
+</script>
+</body>
+</html>

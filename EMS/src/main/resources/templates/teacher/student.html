@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+<title>班级管理</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body th:fragment="default">
+<script id="studentListTemplate" type="x-tmpl-mustache">
+{{#studentList}}
+	<div class="row">
+         <div class="col-xs-2">{{number}}</div>
+         <div class="col-xs-2">{{name}}</div>
+         <div class="col-xs-2">{{gender}}</div>
+         <div class="col-xs-2">{{majorName}}</div>
+         <div class="col-xs-2">{{teamName}}</div>
+         <div class="col-xs-2">
+			<shiro:hasPermission name="role:update">
+				<a href="javascript:void(0)"  id="roleUpdate" onclick="edit(this)" data="{{id}}">
+					 <button class="btn btn-success btn-xs" data-toggle="modal" data-target="#reviseUser">修改</button>
+				</a>
+			</shiro:hasPermission>
+			<shiro:hasPermission name="role:delete">
+				<a href="javascript:void(0)"  onclick="deleteRole(this)" dataId="{{id}}" dataName="{{name}}">					 
+					<button class="btn btn-danger btn-xs" data-toggle="modal" data-target="#deleteUser">删除</button>
+				</a>
+			</shiro:hasPermission>
+         </div>
+    </div>
+{{/studentList}}
+</script>
+<script type="text/javascript">
+//获取模板里面的HTML内容
+var template = $("#studentListTemplate").html();
+//用Mustache.parse()解析一下，让Mustache能够识别并渲染页面
+Mustache.parse(template);
+//分页的回调函数
+function pageCallBack(subData){
+	var rendered = Mustache.render(template,{
+		studentList:subData,
+        "showEntime":function(){
+        	var d=new Date(this.entime);
+        	var times=d.getFullYear() + '-' + (d.getMonth() + 1);
+        	return times;
+        }
+	});
+	$("#studentList").html(rendered);
+}
+$(function() {
+	loadStudentList();
+});
+function loadStudentList(){
+	$.ajax({
+		url : "/teacher/studentList",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				initPage(result.data);
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+
+</script>
+<div class="tab-pane">
+         <div class="check-div form-inline">
+	             <div class=" col-xs-12">
+                      <font color="2A00F" size="4px">学生名单</font>                     
+	             </div>
+         </div>
+         <div class="data-div">
+           		 <div class="row tableHeader">
+	                  <div class="col-xs-2 ">学号 </div>
+	                  <div class="col-xs-2">姓名</div>
+	                  <div class="col-xs-2">性别</div>
+	                  <div class="col-xs-2">所属专业</div>
+	                  <div class="col-xs-2">所属班级</div>
+	                  <div class="col-xs-2">操作</div>
+                  </div>
+                  <div class="tablebody" id="studentList">
+                  </div>
+        </div>
+        <div align="center"><div th:include="/common/page::html"></div></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body th:fragment="default">
+<div id="page"></div>
+<script id="pageTemplate" type="x-tmpl-mustache">
+	<div class="dataTables_info" id="dynamic-table_info" role="status"
+		aria-live="polite">
+		 <font size="3px">
+			当前第&nbsp;<font color="2A00F"><span>{{currentPage}} </span></font>&nbsp;页，
+                           共&nbsp;<font color="2A00F"><span>{{totalPage}}</span></font>&nbsp;页，
+                           总共(&nbsp;<font color="2A00F"><span>{{totalCount}}</span></font>&nbsp;)条记录
+		 </font>
+	</div>
+	<div class="dataTables_paginate paging_simple_numbers"
+		id="dynamic-table_paginate">
+		<h4>
+			<ul class="pagination">
+				<li class="paginate_button" aria-controls="dynamic-table" tabindex="0">
+					<input class="btn btn-link page-action" type="button" th:value="首页"
+					onclick="goPage(this)" pageNo="1" target="firstPage">
+				</li>
+				<li class="paginate_button" aria-controls="dynamic-table" tabindex="0">
+					<input class="btn btn-link page-action" type="button" th:value="前一页"
+					onclick="goPage(this)" target="beforePage">
+				</li>
+				<li class="paginate_button" aria-controls="dynamic-table" tabindex="0">
+					<font size="4px">
+				<select  id="pageSize" name="pageSize"
+										onchange="changePageSize()">
+										<option value="5">每页5条</option>
+										<option value="2">每页3条</option>
+										<option value="10">每页8条</option>
+				</select>
+				    </font>
+				</li>
+				<li class="paginate_button" aria-controls="dynamic-table" tabindex="0">
+                    <input class="btn btn-link page-action" type="button" th:value="后一页"
+					onclick="goPage(this)" target="nextPage">
+				</li>
+				<li class="paginate_button" aria-controls="dynamic-table" tabindex="0">
+					<input class="btn btn-link" type="button" th:value="尾页"  
+					onclick="goPage(this)" target="lastPage">
+				</li>
+			</ul>
+		</h4>
+	</div>
+</script>
+<script type="text/javascript">
+
+//定义一个全局的分页的对象
+var page=new Object();
+
+//分页信息初始化函数
+function initPage(data){
+	//分页的数据
+	page.data=data;
+	//默认初始每页显示的数量为5
+	page.size=4;
+	//默认初始当前页的页码为1
+    page.currentPage=1;
+	//总的记录条数
+	page.totalCount=page.data.length;
+	//总的页数
+	page.totalPage=(page.data.length % page.size == 0 ? page.data.length / page.size :  Math.floor(page.data.length / page.size) + 1);
+	
+	pageCallBack(getSubData());
+	
+	loadPageInfo();
+}
+//输出分页信息的函数
+function loadPageInfo(){
+	var pageTemplate = $("#pageTemplate").html();
+	Mustache.parse(pageTemplate);
+    var rendered = Mustache.render(pageTemplate,{
+	 			   currentPage:page.currentPage,
+	               totalPage:page.totalPage,
+	               totalCount:page.totalCount
+	               });
+	//将渲染完成的内容放到指定的位置去显示
+	$("#page").html(rendered); 
+}
+//从集合中获取子集合
+function getSubData() {
+		//计算开始下标
+		var start=(page.currentPage - 1) * page.size;
+		//alert(page.totalCount)
+		//计算结束下标
+		var end=page.totalCount - start > page.size ? (start + page.size) : page.totalCount;
+		//alert("开始："+start+"结束："+end)
+		//取集合中取出从开始位置到结束位置的子集合
+		return page.data.slice(start,end);
+}
+
+//分页跳转函数
+function goPage(e) {
+	//获取触发点击事件的对象
+	var target=$(e).attr("target");
+	
+	if(target=="firstPage"){
+		if(page.currentPage==1){
+			Notiflix.Notify.Info('当前已经是首页!');
+		}else{
+			page.currentPage=1;
+			loadPageInfo();
+			pageCallBack(getSubData())
+		}
+	}
+	if(target=="beforePage"){
+		var toPage=page.currentPage-1;
+		if(toPage==0){
+			Notiflix.Notify.Info('当前已经是第一页!');
+		}else{
+			page.currentPage=toPage;
+			loadPageInfo();
+			pageCallBack(getSubData())
+		}
+	}
+	if(target=="nextPage"){
+		var toPage=page.currentPage+1;
+		if(toPage>page.totalPage){
+			Notiflix.Notify.Info('当前已经是最后一页!');
+		}else{
+			page.currentPage=toPage;
+			loadPageInfo();
+			pageCallBack(getSubData())
+		}
+	}
+	if(target=="lastPage"){
+		if(page.currentPage==page.totalPage){
+			Notiflix.Notify.Info('当前已经是尾页!');
+		}else{
+			page.currentPage=page.totalPage;
+			loadPageInfo();
+			pageCallBack(getSubData())
+		}
+	}
+}
+
+//存在bug，暂时没用
+function changePageSize(e){
+	//设置每页显示的数量
+	page.size= Number($("#pageSize").val());//使用Number()将string转成数字类型
+	//重置当前页的页码为1
+    page.currentPage=1;
+	//总的记录条数
+	page.totalCount=page.data.length;
+	//总的页数
+	page.totalPage=(page.data.length % page.size == 0 ? page.data.length / page.size :  Math.floor(page.data.length / page.size) + 1);
+	
+	pageCallBack(getSubData());
+	
+	loadPageInfo(); 
+}
+</script>
+</body>
+</html>

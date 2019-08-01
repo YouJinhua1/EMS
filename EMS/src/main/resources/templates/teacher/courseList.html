@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+<title>班级管理</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body th:fragment="default">
+<script id="courseListTemplate" type="x-tmpl-mustache">
+{{#courseList}}
+	<div class="row">
+         <div class="col-xs-2">{{courseno}}</div>
+         <div class="col-xs-2">{{name}}</div>
+		 <div class="col-xs-2">{{period}}</div>
+         <div class="col-xs-2">{{showStartTime}}</div>
+         <div class="col-xs-2">{{showEndTime}}</div>
+         <div class="col-xs-2">{{classroom}}</div>
+    </div>
+{{/courseList}}
+</script>
+<script type="text/javascript">
+var majorMap={};
+//获取模板里面的HTML内容
+var template = $("#courseListTemplate").html();
+//用Mustache.parse()解析一下，让Mustache能够识别并渲染页面
+Mustache.parse(template);
+//分页的回调函数
+function pageCallBack(subData){
+	var rendered = Mustache.render(template,{
+		courseList:subData,
+        "showStartTime":function(){
+        	var d=new Date(this.starttime);
+        	var times=d.getFullYear() + '-' + (d.getMonth() + 1);
+        	return times;
+        },
+	 	"showEndTime":function(){
+     	var d=new Date(this.endtime);
+     	var times=d.getFullYear() + '-' + (d.getMonth() + 1);
+     	return times;
+    	},
+	});
+	$("#courseList").html(rendered);
+}
+$(function() {
+	loadCourseList();
+	loadMajor();
+});
+function loadCourseList(){
+	$.ajax({
+		url : "/teacher/courseList",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				initPage(result.data);
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+
+
+</script>
+<div class="tab-pane">
+         <div class="check-div form-inline">
+         		 <div class=" col-xs-12">
+                      <font color="2A00F" size="4px">教学任务</font>                     
+	             </div>
+	            
+         </div>
+         <div class="data-div">
+           		 <div class="row tableHeader">
+	                  <div class="col-xs-2">课程编号 </div>
+	                  <div class="col-xs-2">课程名称</div>
+	                  <div class="col-xs-2">学时</div>
+	                  <div class="col-xs-2">开课时间</div>
+	                  <div class="col-xs-2">结课时间</div>
+	                  <div class="col-xs-2">上课教室</div>
+                  </div>
+                  <div class="tablebody" id="courseList">
+                  </div>
+        </div>
+        <div align="center"><div th:include="/common/page::html"></div></div>
+</div>
+<script type="text/javascript">
+
+
+</script>
+</body>
+</html>

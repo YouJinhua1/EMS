@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+<title>专业管理</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body th:fragment="default">
+<div style="padding: 20px 10px 10px 60px;">
+<script id="majorListTemplate" type="x-tmpl-mustache">
+{{#majorList}}
+	<tr>		
+		<td class="info">{{name}}</td>
+		<td class="info">{{sdeptName}}</td>
+		<td class="info">{{leaderName}}</td>
+		<shiro:hasPermission name="major:update">
+		    <td class="warning">
+			    <a href="javascript:void(0)"  id="roleUpdate" onclick="openUpdateModal(this)" data="{{id}}">
+				     <span class="glyphicon glyphicon-pencil col-xs-offset-5" aria-hidden="true"></span>
+			    </a>
+		    </td> 
+		</shiro:hasPermission>
+		<shiro:hasPermission name="major:delete">
+			<td class="warning">
+				<a href="javascript:void(0)"  onclick="deleteSdept(this)" dataId="{{id}}" dataName="{{name}}">
+					<font color="red"><span class="glyphicon glyphicon-trash col-xs-offset-5" aria-hidden="false"></span></font>
+				</a>
+			</td>
+	    </shiro:hasPermission>
+    </tr>
+{{/majorList}}
+</script>
+<script type="text/javascript">
+var leaderMap={};
+var sdeptMap={};
+//获取模板里面的HTML内容
+var template = $("#majorListTemplate").html();
+//用Mustache.parse()解析一下，让Mustache能够识别并渲染页面
+Mustache.parse(template);
+//分页的回调函数
+function pageCallBack(subData){
+	var rendered = Mustache.render(template,{majorList:subData});
+	$("#majorList").html(rendered);
+}
+$(function() {
+	loadMajorList();
+	loadLeaderList();
+	loadSdeptList();
+});
+function loadMajorList(){
+	$.ajax({
+		url : "/major/majorList",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				initPage(result.data)
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+function loadSdeptList(){
+	$.ajax({
+		url : "/major/loadSdept",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				var data = result.data;
+				$("#queryBySdeptSelect").children().remove();
+				$("#queryBySdeptSelect").append("<option value='root' selected>请选择院系</option>");
+        		for(var i=0;i<data.length;i++){
+        			var option="<option value='"+data[i].id+"'>"+data[i].name+"</option>";
+        			$("#queryBySdeptSelect").append(option);
+        			sdeptMap[data[i].id]=data[i];
+        		}
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+function loadLeaderList(){
+	$.ajax({
+		url : "/major/loadLeader",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				var data = result.data;
+        		for(var i=0;i<data.length;i++){
+        			leaderMap[data[i].id]=data[i];
+        		}
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+function openAddModal(){
+	$("#saveMajor")[0].reset();
+	$("#sdeptSelect").children().remove();
+	$("#sdeptSelect").append("<option value='root' selected>请选择所属院系</option>");
+	for(var key in sdeptMap){
+		var option="<option value='"+key+"'>"+sdeptMap[key].name+"</option>";
+		$("#sdeptSelect").append(option);
+	}
+	$("#leaderSelect").children().remove();
+	$("#leaderSelect").append("<option value='root' selected>请选择专业负责人</option>");
+	for(var key in leaderMap){
+		var option="<option value='"+key+"'>"+leaderMap[key].name+"</option>";
+		$("#leaderSelect").append(option);
+	}
+	$("#exampleModa11").addClass("in");
+	$("#exampleModa11").show();
+}
+
+function closeAddModal(){
+	$("#exampleModa11").removeClass("in");
+	$("#exampleModa11").hide();
+}
+function saveMajor(){
+	var leaderId=$("#leaderSelect").val();
+	var sdeptId=$("#sdeptSelect").val();
+	if(leaderId=='root'){
+		Notiflix.Notify.Info("未选择专业负责人！");
+		return;
+	}
+	if(sdeptId=='root'){
+		Notiflix.Notify.Info("未选择所属院系！");
+		return;
+	}
+	$.ajax({
+        url : "/major/saveMajor",
+        data: $("#saveMajor").serializeArray(),
+        async : true,
+        type : "POST",
+        dataType : "json",
+        success : function(result){
+        	if(result.result){
+        		Notiflix.Notify.Success(result.msg);
+        		closeAddModal();
+        		loadMajorList();
+        	}else{
+        		Notiflix.Notify.Failure(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Failure("请求失败!");
+        }
+    }); 
+}
+function submit1(e){
+	var sdeptId=$(e).val();
+	$.ajax({
+        url : "/major/queryMajorBySdeptId?sdeptId="+sdeptId,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+				initPage(result.data);
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+function query() {
+	var name=$("#queryMajorByName").val();
+	$.ajax({
+        url : "/major/queryMajorByName?name="+name,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+				initPage(result.data);
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+function deleteSdept(e){
+	var majorName=$(e).attr("dataName");
+	var majorId=$(e).attr("dataId");
+	Notiflix.Confirm.Show( '友情提示', '您确定要删除:'+majorName+'吗?', '是', '否', function(){   
+		$.ajax({
+	        url : "/major/deleteMajor?id="+majorId,
+	        async : true,
+	        type : "POST",
+	        success : function(result){
+	        	if(result.result){
+	        		Notiflix.Notify.Success(result.msg);
+	        		loadMajorList();
+	        	}else{
+	        		Notiflix.Notify.Failure(result.msg);
+	        	}
+	        },
+	        error : function() {
+	        	Notiflix.Notify.Failure("该专业下尚存在班级，无法删除！");
+	        },
+	        dataType : "json"
+	    });
+	});
+}
+function openUpdateModal(e){
+	var data=$(e).attr("data");
+    $.ajax({
+        url : "/major/findMajorById?data="+data,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+        		var data=result.data;
+        		$("#updateMajor")[0].reset();
+        		$("#updateSdeptSelect").children().remove();
+        		$("#updateLeaderSelect").children().remove();
+        		$("#updateMajorId").val(data.id);
+        		$("#updateMajorName").val(data.name);
+        		$("#updatesdeptSelect").children().remove();
+        		for(var key in leaderMap){
+        			if(data.leaderId==key){
+        				var option="<option value='"+key+"' selected>"+leaderMap[key].name+"</option>";
+	        			$("#updateLeaderSelect").append(option);
+        			}else{
+        				var option="<option value='"+key+"'>"+leaderMap[key].name+"</option>";
+	        			$("#updateLeaderSelect").append(option);
+        			}
+        		}
+        		for(var key in sdeptMap){
+        			if(data.sdeptId==key){
+        				var option="<option value='"+key+"' selected>"+sdeptMap[key].name+"</option>";
+	        			$("#updateSdeptSelect").append(option);
+        			}else{
+        				var option="<option value='"+key+"'>"+sdeptMap[key].name+"</option>";
+	        			$("#updateSdeptSelect").append(option);
+        			}
+        		}
+        		$("#exampleModa9").addClass("in");
+        		$("#exampleModa9").show();
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        	
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+function closeUpdateModal(){
+	$("#exampleModa9").removeClass("in");
+	$("#exampleModa9").hide();
+}
+function updateMajor(){
+	$.ajax({
+        url : "/major/updateMajor",
+        data: $("#updateMajor").serializeArray(),
+        async : true,
+        type : "POST",
+        success : function(result){
+        	if(result.result){
+        		Notiflix.Notify.Success(result.msg);
+        		closeUpdateModal();
+        		loadMajorList();
+        		
+        	}else{
+        		Notiflix.Notify.Failure(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+
+</script>
+<!--新增院系模态框-->
+<div class="modal fade" id="exampleModa11" tabindex="-1" role="dialog"
+	aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+		    <div class="modal-header">
+                  <h5 class="modal-title" align="center">新增专业</h5> 
+            </div>
+					<div class="modal-body" >
+					<form id="saveMajor">
+					  <div class="form-group">
+					    <label>所属院系</label>
+					    <select class="form-control selectpicker"  id="sdeptSelect" name="sdeptId">
+					    </select>
+					  </div>
+					  <div class="form-group">
+					    <label>专业名称</label>
+					    <input type="text" class="form-control" name="name" placeholder="专业名称">
+					  </div>
+					  <div class="form-group">
+					    <label>专业导员</label>
+					    <select class="form-control selectpicker"  id="leaderSelect" name="leaderId">
+					    </select>
+					  </div>
+					<!--模态框底部按钮-->
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal" onclick="closeAddModal()">Close</button>
+						<button type="button" class="btn btn-primary"  onclick="saveMajor()">Submit</button>
+					</div>
+					</form>
+				</div>
+		</div>
+	</div>
+</div>
+<!--修改模态框-->
+<div class="modal fade" id="exampleModa9" tabindex="-1" role="dialog"
+	aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+		    <div class="modal-header">
+                  <h5 class="modal-title" align="center">专业信息修改</h5> 
+            </div>
+					<div class="modal-body" >
+					<form id="updateMajor">
+					  <input type="hidden" name="id" id="updateMajorId">
+					  <div class="form-group">
+					    <label>所属院系</label>
+					    <select class="form-control selectpicker"  id="updateSdeptSelect" name="sdeptId">
+					    </select>
+					  </div>
+					  <div class="form-group">
+					    <label>专业名称</label>
+					    <input type="text" class="form-control" id="updateMajorName" name="name" placeholder="专业名称">
+					  </div>
+					  <div class="form-group">
+					    <label>专业导员</label>
+					    <select class="form-control selectpicker"  id="updateLeaderSelect" name="leaderId">
+					    </select>
+					  </div>
+					<!--模态框底部按钮-->
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal" onclick="closeUpdateModal()">Close</button>
+						<button type="button" class="btn btn-primary"  onclick="updateMajor()">Submit</button>
+					</div>
+					</form>
+				</div>
+		</div>
+	</div>
+</div>
+	<div class=" col-xs-8 col-md-9" style="margin-top: 20px;" align="center">
+	<div id="content">
+		<form id="form1" action="${path}/role/selectAllRole.do" method="post">
+			<div class="container">
+				<div class="row">
+					<div class="col-xs-12 col-xs-offset-1">
+
+						<input type="hidden" name="pageModel.pageNo"
+							value="${csc.pageModel.pageNo}" id="pageNo"> <input
+							type="hidden" name="totalPage" value="${csc.pageModel.totalPage}"
+							id="totalPage">
+						<div class="row">
+							<shiro:hasPermission name="major:save">
+							<div class="col-xs-3 col-xs-offset-0">
+							    	<h4><input class="btn btn-info" type="button" th:value="新增专业" onclick="openAddModal()"></h4>
+							</div>
+							</shiro:hasPermission>
+							<div class="col-xs-2 col-xs-offset-2">
+								<h4>条件查询	</h4>
+							</div>
+						</div>
+						<div class="row" style="margin-bottom: 5px;">
+							<div class="col-xs-3 col-xs-offset-0">
+								<font size="3px">
+									按院系查询：<select id="queryBySdeptSelect" name="sdeptId"
+										onchange="submit1(this)">
+										
+									</select>
+								</font>
+							</div>
+							<div class="col-xs-4 col-xs-offset-1 ">
+								<div class="input-group">
+									<input id="queryMajorByName" type="text" class="form-control" name="name"
+										 placeholder="根据专业名称查询!">
+									<span class="input-group-btn"><input type="button"
+										class="btn btn-primary" onclick="query()" value="soso" /></span>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+				<br>
+				<div class="row">
+					<div class="col-xs-10">
+						<table class="table table-bordered table-hover" id="mytable"
+							style="text-align: center">
+							<tr>
+								<td class="info">专业名称</td>
+								<td class="info">所属院系</td>
+								<td class="info">专业导员</td>
+								<shiro:hasPermission name="major:update">
+									<td class="warning">修改</td>
+								</shiro:hasPermission>
+								<shiro:hasPermission name="major:delete">
+									<td class="warning">删除</td>
+								</shiro:hasPermission>
+							</tr>
+							<tbody id="majorList">
+							
+							</tbody>
+								
+						</table>
+						<div align="center">
+							<div th:include="/common/page::html"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+</div>
+
+</body>
+</html>

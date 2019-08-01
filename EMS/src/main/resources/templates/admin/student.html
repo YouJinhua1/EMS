@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+<title>班级管理</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body th:fragment="default">
+<script id="studentListTemplate" type="x-tmpl-mustache">
+{{#studentList}}
+	<div class="row">
+         <div class="col-xs-1">{{number}}</div>
+         <div class="col-xs-1">{{name}}</div>
+         <div class="col-xs-1">{{gender}}</div>
+		 <div class="col-xs-1">{{age}}</div>
+         <div class="col-xs-1">{{politicsStatus}}</div>
+         <div class="col-xs-1">{{showEntime}}</div>
+         <div class="col-xs-2">{{sdeptName}}</div>
+         <div class="col-xs-1">{{majorName}}</div>
+         <div class="col-xs-1">{{teamName}}</div>
+         <div class="col-xs-2">
+			<shiro:hasPermission name="role:update">
+				<a href="javascript:void(0)"  id="roleUpdate" onclick="edit(this)" data="{{id}}">
+					 <button class="btn btn-success btn-xs" data-toggle="modal" data-target="#reviseUser">修改</button>
+				</a>
+			</shiro:hasPermission>
+			<shiro:hasPermission name="role:delete">
+				<a href="javascript:void(0)"  onclick="deleteRole(this)" dataId="{{id}}" dataName="{{name}}">					 
+					<button class="btn btn-danger btn-xs" data-toggle="modal" data-target="#deleteUser">删除</button>
+				</a>
+			</shiro:hasPermission>
+         </div>
+    </div>
+{{/studentList}}
+</script>
+<script type="text/javascript">
+var sdeptMap={};
+var majorMap={};
+var teamMap={};
+//获取模板里面的HTML内容
+var template = $("#studentListTemplate").html();
+//用Mustache.parse()解析一下，让Mustache能够识别并渲染页面
+Mustache.parse(template);
+//分页的回调函数
+function pageCallBack(subData){
+	var rendered = Mustache.render(template,{
+		studentList:subData,
+        "showEntime":function(){
+        	var d=new Date(this.entime);
+        	var times=d.getFullYear() + '-' + (d.getMonth() + 1);
+        	return times;
+        }
+	});
+	$("#studentList").html(rendered);
+}
+$(function() {
+	loadStudentList();
+	loadSdept();
+});
+function loadStudentList(){
+	$.ajax({
+		url : "/student/studentList",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				initPage(result.data);
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+function loadSdept(){
+	$.ajax({
+		url : "/student/loadSdept",
+		async : true,
+		type : "POST",
+		success : function(result) {
+			if (result.result) {
+				var sdeptList=result.data;
+				for(var i=0;i<sdeptList.length;i++){
+					var sdept=sdeptList[i];
+					var option="<option value='"+sdept.id+"'>"+sdept.name+"</option>";
+					$("#sdeptSelect").append(option);
+					sdeptMap[sdept.id]=sdept;
+					var majorList=sdept.majorList;
+					for(var j=0;j<majorList.length;j++){
+						var major=majorList[j];
+						var option="<option value='"+major.id+"'>"+major.name+"</option>";
+						$("#majorSelect").append(option);
+						majorMap[major.id]=major;
+						var teamList=major.teamList;
+						for(var x=0;x<teamList.length;x++){
+							var team=teamList[x];
+							var option="<option value='"+team.id+"'>"+team.name+"</option>";
+							$("#teamSelect").append(option);
+							teamMap[team.id]=team;
+						}
+					}
+				}
+			} else {
+				Notiflix.Notify.Failure(result.msg);
+			}
+		},
+		error : function() {
+			Notiflix.Notify.Failure("请求失败");
+		},
+		dataType : "json"
+	});
+}
+function sdeptChange(e){
+	var sdeptId=$(e).val();
+	$.ajax({
+        url : "/student/queryStudentBySdeptId?sdeptId="+sdeptId,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+				initPage(result.data);
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+	
+}
+function majaorChange(e){
+	var majorId=$(e).val();
+	$.ajax({
+        url : "/student/queryStudentByMajorId?majorId="+majorId,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+				initPage(result.data);
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+function teamChange(e){
+	var teamId=$(e).val();
+	$.ajax({
+        url : "/student/queryStudentByTeamId?teamId="+teamId,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+				initPage(result.data);
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+function query() {
+	var name=$("#queryRoleByName").val();
+	$.ajax({
+        url : "/student/queryStudentByName?name="+name,
+        async : true,
+        type : "POST",
+        // 成功后开启模态框
+        success : function(result){
+        	if(result.result){
+				initPage(result.data);
+        	}else{
+        		Notiflix.Notify.Info(result.msg);
+        	}
+        },
+        error : function() {
+        	Notiflix.Notify.Info("请求失败!");
+        },
+        dataType : "json"
+    });
+}
+</script>
+<div class="tab-pane">
+         <div class="check-div form-inline">
+	             <div class=" col-xs-3">
+	                                               院系筛选：<select id="sdeptSelect" name="available" onchange="sdeptChange(this)">
+										<option value="" selected>请选择</option>
+		     				     </select>
+	             </div>
+	             <div class=" col-xs-3">
+	                                               专业筛选：<select id="majorSelect" name="available" onchange="majaorChange(this)">
+				                        <option value="" selected>请选择</option>
+								 </select>
+	             </div>
+	             <div class=" col-xs-3">
+	                                               班级筛选：<select id="teamSelect" name="available" onchange="teamChange(this)">
+									    <option value="" selected>请选择</option>
+								 </select>
+	             </div>
+	             <div class="col-xs-3" style=" padding-right: 40px;text-align: right;">
+	                    <div class="input-group">
+							<input id="queryRoleByName" type="text" class="form-control" placeholder="输入学生姓名查询!" name="name">
+							<span class="input-group-addon btn btn-primary" onclick="query()">soso</span>
+			   			</div>
+	             </div>
+         </div>
+         <div class="data-div">
+           		 <div class="row tableHeader">
+	                  <div class="col-xs-1 ">学号 </div>
+	                  <div class="col-xs-1">姓名</div>
+	                  <div class="col-xs-1">性别</div>
+	                  <div class="col-xs-1">年龄</div>
+	                  <div class="col-xs-1">政治面貌</div>
+	                  <div class="col-xs-1">入学时间</div>
+	                  <div class="col-xs-2">所属院系</div>
+	                  <div class="col-xs-1">所属专业</div>
+	                  <div class="col-xs-1">所属班级</div>
+	                  <div class="col-xs-1">操作</div>
+                  </div>
+                  <div class="tablebody" id="studentList">
+                  </div>
+        </div>
+        <div align="center"><div th:include="/common/page::html"></div></div>
+</div>
+</body>
+</html>

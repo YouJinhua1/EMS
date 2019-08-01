@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yjh.mapper.SysRolePermMapper" >
+  <resultMap id="BaseResultMap" type="com.yjh.domain.SysRolePerm" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="role_id" property="roleId" jdbcType="INTEGER" />
+    <result column="perm_id" property="permId" jdbcType="INTEGER" />
+    <result column="operator" property="operator" jdbcType="VARCHAR" />
+    <result column="operate_time" property="operateTime" jdbcType="TIMESTAMP" />
+    <result column="operate_ip" property="operateIp" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, role_id, perm_id, operator, operate_time, operate_ip
+  </sql>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from sys_role_perm
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from sys_role_perm
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.yjh.domain.SysRolePerm" >
+    insert into sys_role_perm (id, role_id, perm_id, 
+      operator, operate_time, operate_ip
+      )
+    values (#{id,jdbcType=INTEGER}, #{roleId,jdbcType=INTEGER}, #{permId,jdbcType=INTEGER}, 
+      #{operator,jdbcType=VARCHAR}, #{operateTime,jdbcType=TIMESTAMP}, #{operateIp,jdbcType=VARCHAR}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.yjh.domain.SysRolePerm" >
+    insert into sys_role_perm
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="roleId != null" >
+        role_id,
+      </if>
+      <if test="permId != null" >
+        perm_id,
+      </if>
+      <if test="operator != null" >
+        operator,
+      </if>
+      <if test="operateTime != null" >
+        operate_time,
+      </if>
+      <if test="operateIp != null" >
+        operate_ip,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="roleId != null" >
+        #{roleId,jdbcType=INTEGER},
+      </if>
+      <if test="permId != null" >
+        #{permId,jdbcType=INTEGER},
+      </if>
+      <if test="operator != null" >
+        #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="operateTime != null" >
+        #{operateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="operateIp != null" >
+        #{operateIp,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.yjh.domain.SysRolePerm" >
+    update sys_role_perm
+    <set >
+      <if test="roleId != null" >
+        role_id = #{roleId,jdbcType=INTEGER},
+      </if>
+      <if test="permId != null" >
+        perm_id = #{permId,jdbcType=INTEGER},
+      </if>
+      <if test="operator != null" >
+        operator = #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="operateTime != null" >
+        operate_time = #{operateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="operateIp != null" >
+        operate_ip = #{operateIp,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.yjh.domain.SysRolePerm" >
+    update sys_role_perm
+    set role_id = #{roleId,jdbcType=INTEGER},
+      perm_id = #{permId,jdbcType=INTEGER},
+      operator = #{operator,jdbcType=VARCHAR},
+      operate_time = #{operateTime,jdbcType=TIMESTAMP},
+      operate_ip = #{operateIp,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="getPermIdListByRoleIdList" parameterType="map" resultType="Integer">
+  		select perm_id from sys_role_perm where role_id in 
+  		<foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+	  		#{id}
+		</foreach>
+		group by perm_id
+  </select>
+  <select id="getPermIdListByRoleId" parameterType="map" resultType="Integer">
+  		select perm_id from sys_role_perm where role_id=#{id} group by perm_id
+  </select>
+  <delete id="deleteByRoleId" parameterType="map">
+  		delete from sys_role_perm where role_id=#{roleId}
+  </delete>
+  <insert id="changeRolePerm" parameterType="map" >
+    insert into sys_role_perm (role_id, perm_id, 
+      operator, operate_time, operate_ip
+      )
+    values
+    <foreach collection="rolePermList" item="rolePerm" separator=","> 
+      ( 
+        #{rolePerm.roleId}, #{rolePerm.permId}, 
+        #{rolePerm.operator}, #{rolePerm.operateTime}, 
+        #{rolePerm.operateIp}
+      )
+    </foreach>
+  </insert>
+</mapper>

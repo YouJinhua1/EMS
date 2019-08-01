@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:include="/common/resource::default">
+<meta charset="UTF-8">
+<title>系统首页</title>
+</head>
+<script th:inline="javascript">
+   $(function(){
+	   Notiflix.Notify.Init();
+	   Notiflix.Report.Init();
+	   Notiflix.Confirm.Init();
+
+		// 显示时钟
+		var myVar = setInterval(function() {
+			myTimer()
+		}, 1000);
+		function myTimer() {
+			var d = new Date();
+			var t = d.toLocaleTimeString();
+			document.getElementById("demo").innerHTML = t;
+		}
+   });
+   function back() {
+		 Notiflix.Confirm.Show( '退出提示', '您确定要退出系统吗?', '是', '否', function(){   window.location.href = "/logout";  }); 
+			
+	}
+</script>
+<body style="background-color: #EFF3F6">
+<!-- 顶部菜单（来自bootstrap官方Demon）==================================== -->
+<div>
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container">
+			<div class="navbar-header ">
+				<span class=" navbar-brand glyphicon" aria-hidden="true"> <i
+					class="glyphicon glyphicon-user" aria-hidden="true"></i>
+					当前用户&nbsp;:&nbsp;<span th:text="${session.user.name}"></span>
+				</span>
+			</div>
+			<div class="navbar-header navbar-right">
+				<span class=" navbar-brand glyphicon " aria-hidden="true"><i
+					class="fa fa-cog fa-spin"></i>&nbsp;系统时间&nbsp;<span id="demo"></span>
+					<span class="dropdown-toggle" data-toggle="dropdown" role="button"
+					aria-expanded="true">选项<span class="caret"></span></span>
+					<ul class="dropdown-menu" role="menu">
+							<li><a data-toggle="modal" data-target="#exampleModa1"
+							data-whatever="@getbootstrap"><button type="button" class="btn btn-info "  style="height:32px">我的信息</button></a></li>
+						<li><a data-toggle="modal" data-target="#exampleModa2"
+							data-whatever="@getbootstrap"><button type="button" class="btn btn-info "  style="height:32px">系统信息</button></a></li>
+						<li class="divider"></li>
+						<li><a onclick="back()">
+						<button type="button" class="btn btn-danger glyphicon glyphicon-off"  style="height:32px;width:83px"></button>
+						</a></li>
+					</ul> </span>
+			</div>
+		</div>
+	</nav>
+</div>
+
+<!-- 菜单目录========================================= -->
+<div style="width:18%;height:700px;overflow:auto; float:left;margin-top: 50px;background-color: #4D5E70;border-right:1px solid #4D5E70;position: fixed;">
+	<div id="menu_title" align="center">
+		<font size="4px" color="#FFFFFF">系统目录</font>
+	</div>
+	<div th:include="/common/menu::html"></div>
+</div>
+<!-- 右侧主体==================================================-->
+<div style="width:82%;height:100%;overflow:auto; float:right;margin-top: 50px;overflow: -Scroll;overflow-x: hidden;">
+ 	<div th:include="${include}::default"></div> 
+</div>
+
+<!--我的信息模态框-->
+	<div class="modal fade" id="exampleModa1" tabindex="-1" role="dialog"
+		aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div role="tabpanel" class="tab-pane" id="profile">
+					<div class="modal-body" style="text-align: center;">
+						<table class="table table-bordered " style="font-size: 20px;">
+							<tr>
+								<td colspan="4">我的信息</td>
+							</tr>
+							<tr>
+								<td>姓名</td>
+								<td id="table-name">${userDetail.user.usercode}</td>
+								<td colspan="2" rowspan="3"><img
+									src="http://img.qq745.com/uploads/allimg/150902/1-150Z2222227-50.jpg"
+									width="100%" alt="头像"></td>
+							</tr>
+							<tr>
+								<td>性别</td>
+								<td id="table-sex">男</td>
+							</tr>
+							<tr>
+								<td>年龄</td>
+								<td id="jl-table-age">22</td>
+							</tr>
+							<tr>
+								<td>电话</td>
+								<td id="jl-table-phone">11221321</td>
+								<td>职业</td>
+								<td id="jl-table-zhiye">高级职员</td>
+							</tr>
+							<tr>
+								<td>出生年月</td>
+								<td id="jl-table-birthday">1231321</td>
+								<td>爱好</td>
+								<td id="jl-table-hoppy">213231321</td>
+							</tr>
+							<tr>
+								<td>个人经历</td>
+								<td colspan="3" id="jl-table-experence">3434243243424343243</td>
+							</tr>
+
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!--详情信息模态框-->
+	<div class="modal fade" id="exampleModa2" tabindex="-1" role="dialog"
+		aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div role="tabpanel" class="tab-pane" id="profile">
+					<div class="modal-body" style="text-align: center;">
+						<p>
+							本项目源码受 <a
+								href="javascript:if(confirm(%27https://github.com/twbs/bootstrap/blob/master/LICENSE  \n\nThis file was not retrieved by Teleport Pro, because it is addressed using an unsupported protocol (e.g., gopher).  \n\nDo you want to open it from the server?%27))window.location=%27https://github.com/twbs/bootstrap/blob/master/LICENSE%27"
+								tppabs="https://github.com/twbs/bootstrap/blob/master/LICENSE"
+								target="_blank">MIT</a> 开源协议保护，文档受 <a
+								href="javascript:if(confirm(%27http://creativecommons.org/licenses/by/3.0/  \n\nThis file was not retrieved by Teleport Pro, because it is addressed on a domain or path outside the boundaries set for its Starting Address.  \n\nDo you want to open it from the server?%27))window.location=%27http://creativecommons.org/licenses/by/3.0/%27"
+								tppabs="http://creativecommons.org/licenses/by/3.0/">CC BY
+								3.0</a> 开源协议保护。
+						</p>
+						<p>开发者(作者)：游锦华</p>
+						<p>当前版本： v2.0.0</p>
+						<p>&middot;</p>
+						<p>中文离线文档制作:游锦华</p>
+						<p>中文离线文档制作日期: 2019-04-2</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

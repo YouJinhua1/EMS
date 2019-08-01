@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet"
+	th:href="@{/bs/font-awesome-4.7.0/css/font-awesome.css}">
+<link rel="stylesheet" th:href="@{/bs/css/bootstrap.min.css}">
+<script th:src="@{/bs/jquery-3.2.1/jquery-3.2.1.min.js}"></script>
+<script th:src="@{/bs/js/bootstrap.min.js}"></script>
+</head>
+<body>
+
+	<!-- 顶部菜单（来自bootstrap官方Demon）==================================== -->
+	<div class="container-fluid">
+		<nav class="navbar navbar-inverse navbar-fixed-top">
+			<div class="container">
+				<div class="navbar-header">
+					<a class="navbar-brand" href="#"><span
+						class="glyphicon glyphicon-user" aria-hidden="true"></span>&nbsp;&nbsp;欢迎使用教务管理系统</a>
+				</div>
+			</div>
+		</nav>
+	</div>
+
+	<!-- 巨幕 -->
+	<div class="jumbotron">
+		<div class="container">
+			<div class="jumbotron">
+			 <h4><a href="#" onclick="back()">点击这里返回</a></h4>
+			 <h4>您访问的地址为：[[${url}]]</h4>
+			 <h4 th:text="${msg}"></h4>
+			 <h4 th:text="${detail}"></h4>
+			</div>
+		</div>
+	</div>
+	<!--页脚-->
+	<footer class="bs-docs-footer" role="contentinfo"
+		style="text-align: center;">
+		<p>
+			本项目源码受 <a
+				href="javascript:if(confirm(%27https://github.com/twbs/bootstrap/blob/master/LICENSE  \n\nThis file was not retrieved by Teleport Pro, because it is addressed using an unsupported protocol (e.g., gopher).  \n\nDo you want to open it from the server?%27))window.location=%27https://github.com/twbs/bootstrap/blob/master/LICENSE%27"
+				tppabs="https://github.com/twbs/bootstrap/blob/master/LICENSE"
+				target="_blank">MIT</a> 开源协议保护，文档受 <a
+				href="javascript:if(confirm(%27http://creativecommons.org/licenses/by/3.0/  \n\nThis file was not retrieved by Teleport Pro, because it is addressed on a domain or path outside the boundaries set for its Starting Address.  \n\nDo you want to open it from the server?%27))window.location=%27http://creativecommons.org/licenses/by/3.0/%27"
+				tppabs="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>
+			开源协议保护。
+		</p>
+		<p>开发者(作者)：游锦华</p>
+		<p>当前版本： v2.0.0</p>
+		<p>当前日期： 2018-07-01</p>
+		<p>&middot;</p>
+		<p>中文离线文档制作:游锦华</p>
+		<p>中文离线文档制作日期: 2018-07-01</p>
+	</footer>
+	<script type="text/javascript">
+		function back(){
+			window.history.go(-1); 
+		}
+	</script>
+</body>
+</html>
